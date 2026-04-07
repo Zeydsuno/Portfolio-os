@@ -3,6 +3,7 @@
 import ReadmeContent from "@/features/portfolio/components/ReadmeContent";
 import ProjectsContent from "@/features/portfolio/components/ProjectsContent";
 import MailContent from "@/features/portfolio/components/MailContent";
+import CVContent from "@/features/portfolio/components/CVContent";
 
 interface MobileSection {
   title: string;
@@ -11,7 +12,8 @@ interface MobileSection {
 
 const SECTIONS: MobileSection[] = [
   { title: "About Me", content: <ReadmeContent /> },
-  { title: "Projects", content: <ProjectsContent /> },
+  { title: "CV", content: <CVContent /> },
+  { title: "Projects", content: <div style={{ overflowX: "auto" }}><ProjectsContent /></div> },
   { title: "Contact", content: <MailContent /> },
 ];
 

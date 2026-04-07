@@ -41,7 +41,7 @@ export default function SnakeGame() {
   const foodRef = useRef<Point>({ x: 15, y: 10 });
   const scoreRef = useRef(0);
   const statusRef = useRef<GameStatus>("waiting");
-  const loopRef = useRef<ReturnType<typeof setInterval>>();
+  const loopRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const draw = useCallback(() => {
     const ctx = canvasRef.current?.getContext("2d");

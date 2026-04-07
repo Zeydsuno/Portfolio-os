@@ -122,7 +122,7 @@ export default function Minesweeper() {
   const [board, setBoard] = useState(createBoard);
   const [gameStatus, setGameStatus] = useState<GameStatus>("playing");
   const [timer, setTimer] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const startedRef = useRef(false);
 
   const flagCount = board.flat().filter((c) => c.flagged).length;
