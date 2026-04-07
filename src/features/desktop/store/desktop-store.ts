@@ -4,66 +4,84 @@ import type {
   WindowInstance,
   WindowPosition,
   WindowSize,
+  IconPosition,
 } from "@/types";
-
-/**
- * Z-INDEX STRATEGY:
- * Each window gets a zIndex from a monotonically increasing counter (nextZIndex).
- * When a window is clicked/focused, it receives the current nextZIndex value,
- * then the counter increments. This guarantees:
- * - No two windows share a z-index
- * - The most recently focused window is always visually on top
- * - The taskbar uses z-index 9999 to always remain above all windows
- */
+import { ICON_POSITIONS } from "../data/desktop-items";
 
 interface DesktopState {
   windows: WindowInstance[];
   nextZIndex: number;
+  focusedWindowId: string | null;
+  iconPositions: Record<string, IconPosition>;
+  selectedIcons: string[];
+
   openWindow: (icon: DesktopIconData) => void;
   closeWindow: (id: string) => void;
   focusWindow: (id: string) => void;
+  minimizeWindow: (id: string) => void;
+  maximizeWindow: (id: string, desktopWidth: number, desktopHeight: number) => void;
+  restoreWindow: (id: string) => void;
+  toggleWindowFromTaskbar: (id: string, desktopWidth: number, desktopHeight: number) => void;
   updateWindowPosition: (id: string, position: WindowPosition) => void;
-  updateWindowSize: (
-    id: string,
-    size: WindowSize,
-    position: WindowPosition
-  ) => void;
+  updateWindowSize: (id: string, size: WindowSize, position: WindowPosition) => void;
+  selectIcon: (id: string | null) => void;
+  selectIcons: (ids: string[]) => void;
+  moveIcon: (id: string, position: IconPosition) => void;
+  moveMultipleIcons: (updates: Record<string, IconPosition>) => void;
+  dropIcons: (ids: string[]) => void;
 }
 
 export const useDesktopStore = create<DesktopState>((set, get) => ({
   windows: [],
   nextZIndex: 1,
+  focusedWindowId: null,
+  iconPositions: { ...ICON_POSITIONS },
+  selectedIcons: [],
 
   openWindow: (icon) => {
     const { windows, nextZIndex, focusWindow } = get();
     const existing = windows.find((w) => w.id === icon.id);
 
-    // If window already open, just bring it to front
     if (existing) {
-      focusWindow(icon.id);
+      // If minimized, restore it; otherwise just focus
+      if (existing.minimized) {
+        set((state) => ({
+          windows: state.windows.map((w) =>
+            w.id === icon.id ? { ...w, minimized: false, zIndex: state.nextZIndex } : w
+          ),
+          nextZIndex: state.nextZIndex + 1,
+          focusedWindowId: icon.id,
+        }));
+      } else {
+        focusWindow(icon.id);
+      }
       return;
     }
 
-    // Offset new windows slightly so they don't stack perfectly
-    const offset = windows.length * 30;
+    const offset = windows.filter((w) => !w.minimized).length * 30;
 
     const newWindow: WindowInstance = {
       id: icon.id,
-      title: icon.label,
+      title: icon.windowTitle ?? icon.label,
       position: { x: 150 + offset, y: 80 + offset },
       size: { width: icon.defaultWidth, height: icon.defaultHeight },
       zIndex: nextZIndex,
+      minimized: false,
+      maximized: false,
+      preMaximizeState: null,
     };
 
     set({
       windows: [...windows, newWindow],
       nextZIndex: nextZIndex + 1,
+      focusedWindowId: icon.id,
     });
   },
 
   closeWindow: (id) => {
     set((state) => ({
       windows: state.windows.filter((w) => w.id !== id),
+      focusedWindowId: state.focusedWindowId === id ? null : state.focusedWindowId,
     }));
   },
 
@@ -73,7 +91,77 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         w.id === id ? { ...w, zIndex: state.nextZIndex } : w
       ),
       nextZIndex: state.nextZIndex + 1,
+      focusedWindowId: id,
     }));
+  },
+
+  minimizeWindow: (id) => {
+    set((state) => ({
+      windows: state.windows.map((w) =>
+        w.id === id ? { ...w, minimized: true } : w
+      ),
+      focusedWindowId: state.focusedWindowId === id ? null : state.focusedWindowId,
+    }));
+  },
+
+  maximizeWindow: (id, desktopWidth, desktopHeight) => {
+    set((state) => ({
+      windows: state.windows.map((w) => {
+        if (w.id !== id) return w;
+        return {
+          ...w,
+          maximized: true,
+          preMaximizeState: { position: w.position, size: w.size },
+          position: { x: 0, y: 0 },
+          size: { width: desktopWidth, height: desktopHeight },
+          zIndex: state.nextZIndex,
+        };
+      }),
+      nextZIndex: state.nextZIndex + 1,
+      focusedWindowId: id,
+    }));
+  },
+
+  restoreWindow: (id) => {
+    set((state) => ({
+      windows: state.windows.map((w) => {
+        if (w.id !== id) return w;
+        if (w.minimized) {
+          return { ...w, minimized: false, zIndex: state.nextZIndex };
+        }
+        if (w.maximized && w.preMaximizeState) {
+          return {
+            ...w,
+            maximized: false,
+            position: w.preMaximizeState.position,
+            size: w.preMaximizeState.size,
+            preMaximizeState: null,
+            zIndex: state.nextZIndex,
+          };
+        }
+        return w;
+      }),
+      nextZIndex: state.nextZIndex + 1,
+      focusedWindowId: id,
+    }));
+  },
+
+  toggleWindowFromTaskbar: (id, desktopWidth, desktopHeight) => {
+    const { windows, focusedWindowId, minimizeWindow, restoreWindow, focusWindow, maximizeWindow } = get();
+    const win = windows.find((w) => w.id === id);
+    if (!win) return;
+
+    if (win.minimized) {
+      restoreWindow(id);
+    } else if (focusedWindowId === id) {
+      minimizeWindow(id);
+    } else {
+      if (win.maximized) {
+        maximizeWindow(id, desktopWidth, desktopHeight);
+      } else {
+        focusWindow(id);
+      }
+    }
   },
 
   updateWindowPosition: (id, position) => {
@@ -90,5 +178,74 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         w.id === id ? { ...w, size, position } : w
       ),
     }));
+  },
+
+  selectIcon: (id) => {
+    set({ selectedIcons: id ? [id] : [] });
+  },
+
+  selectIcons: (ids) => {
+    set({ selectedIcons: ids });
+  },
+
+  moveIcon: (id, position) => {
+    set((state) => ({
+      iconPositions: { ...state.iconPositions, [id]: position },
+    }));
+  },
+
+  moveMultipleIcons: (updates) => {
+    set((state) => ({
+      iconPositions: { ...state.iconPositions, ...updates },
+    }));
+  },
+
+  dropIcons: (ids) => {
+    set((state) => {
+      const GRID_W = 80;
+      const GRID_H = 90;
+
+      const snap = (pos: IconPosition): IconPosition => ({
+        left: Math.max(0, Math.round(pos.left / GRID_W) * GRID_W),
+        top: Math.max(0, Math.round(pos.top / GRID_H) * GRID_H),
+      });
+
+      const key = (pos: IconPosition) => `${pos.left}:${pos.top}`;
+
+      // Cells occupied by icons that are NOT being dropped
+      const occupied = new Set<string>();
+      Object.entries(state.iconPositions).forEach(([id, pos]) => {
+        if (!ids.includes(id)) occupied.add(key(snap(pos)));
+      });
+
+      const updates: Record<string, IconPosition> = {};
+      ids.forEach((id) => {
+        const raw = state.iconPositions[id] ?? { top: 0, left: 0 };
+        const snapped = snap(raw);
+
+        // Spiral outward to find the nearest free cell
+        let final = snapped;
+        outer: for (let r = 0; r < 20; r++) {
+          for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+              if (r > 0 && Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+              const candidate: IconPosition = {
+                left: Math.max(0, snapped.left + dx * GRID_W),
+                top: Math.max(0, snapped.top + dy * GRID_H),
+              };
+              if (!occupied.has(key(candidate))) {
+                final = candidate;
+                break outer;
+              }
+            }
+          }
+        }
+
+        updates[id] = final;
+        occupied.add(key(final)); // reserve for the next icon in the batch
+      });
+
+      return { iconPositions: { ...state.iconPositions, ...updates } };
+    });
   },
 }));
