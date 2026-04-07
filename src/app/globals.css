@@ -1,26 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  font-family: "Press Start 2P", cursive;
+  image-rendering: pixelated;
+}
+
+/* Prevent Tailwind preflight from stripping 98.css default button/input styles.
+   Exclude title-bar-controls buttons — they rely on 98.css background-image SVGs. */
+.window-body button,
+.window-body input,
+.window-body select,
+.window-body textarea {
+  all: revert;
+  font-family: "Press Start 2P", cursive;
+}
+
+/* Status bar buttons also need revert */
+.status-bar button {
+  all: revert;
+  font-family: "Press Start 2P", cursive;
+}
+
+/* Pixel font sizing adjustments — Press Start 2P is large at default sizes */
+.window .title-bar-text {
+  font-family: "Press Start 2P", cursive;
+  font-size: 10px;
+}
+
+.status-bar {
+  font-family: "Press Start 2P", cursive;
+  font-size: 10px;
 }
