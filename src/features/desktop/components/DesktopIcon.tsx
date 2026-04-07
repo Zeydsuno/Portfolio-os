@@ -44,6 +44,14 @@ export default function DesktopIcon({ icon }: DesktopIconProps) {
     const startMouseY = e.clientY;
     let hasDragged = false;
 
+    // Measure desktop bounds once at drag start
+    const desktopEl = document.getElementById("desktop-area");
+    const maxLeft = (desktopEl?.offsetWidth ?? window.innerWidth) - 72;
+    const maxTop = (desktopEl?.offsetHeight ?? window.innerHeight - 32) - 90;
+
+    const clamp = (val: number, min: number, max: number) =>
+      Math.min(Math.max(val, min), max);
+
     const onMove = (moveE: MouseEvent) => {
       const dx = moveE.clientX - startMouseX;
       const dy = moveE.clientY - startMouseY;
@@ -56,8 +64,8 @@ export default function DesktopIcon({ icon }: DesktopIconProps) {
         const updates: Record<string, IconPosition> = {};
         dragIds.forEach((id) => {
           updates[id] = {
-            top: Math.max(0, startPositions[id].top + dy),
-            left: Math.max(0, startPositions[id].left + dx),
+            top: clamp(startPositions[id].top + dy, 0, maxTop),
+            left: clamp(startPositions[id].left + dx, 0, maxLeft),
           };
         });
         moveMultipleIcons(updates);
@@ -66,7 +74,7 @@ export default function DesktopIcon({ icon }: DesktopIconProps) {
 
     const onUp = () => {
       if (hasDragged) {
-        dropIcons(dragIds);
+        dropIcons(dragIds, maxTop, maxLeft);
       } else {
         const now = Date.now();
         if (now - lastClickTime.current < 400) {

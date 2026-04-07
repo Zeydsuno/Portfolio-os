@@ -28,7 +28,7 @@ interface DesktopState {
   selectIcons: (ids: string[]) => void;
   moveIcon: (id: string, position: IconPosition) => void;
   moveMultipleIcons: (updates: Record<string, IconPosition>) => void;
-  dropIcons: (ids: string[]) => void;
+  dropIcons: (ids: string[], maxTop: number, maxLeft: number) => void;
 }
 
 export const useDesktopStore = create<DesktopState>((set, get) => ({
@@ -200,14 +200,17 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
     }));
   },
 
-  dropIcons: (ids) => {
+  dropIcons: (ids, maxTop, maxLeft) => {
     set((state) => {
       const GRID_W = 80;
       const GRID_H = 90;
 
+      const clamp = (val: number, min: number, max: number) =>
+        Math.min(Math.max(val, min), max);
+
       const snap = (pos: IconPosition): IconPosition => ({
-        left: Math.max(0, Math.round(pos.left / GRID_W) * GRID_W),
-        top: Math.max(0, Math.round(pos.top / GRID_H) * GRID_H),
+        left: clamp(Math.round(pos.left / GRID_W) * GRID_W, 0, Math.floor(maxLeft / GRID_W) * GRID_W),
+        top: clamp(Math.round(pos.top / GRID_H) * GRID_H, 0, Math.floor(maxTop / GRID_H) * GRID_H),
       });
 
       const key = (pos: IconPosition) => `${pos.left}:${pos.top}`;
