@@ -45,10 +45,21 @@ const ICON_MINE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" w
   <rect x="6" y="6" width="2" height="2" fill="#fff"/>
 </svg>`;
 
+const ICON_CV = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <rect x="2" y="1" width="12" height="14" fill="#fff" stroke="#000" stroke-width="1"/>
+  <rect x="2" y="1" width="12" height="3" fill="#000080"/>
+  <line x1="4" y1="6" x2="12" y2="6" stroke="#000" stroke-width="1"/>
+  <line x1="4" y1="8" x2="12" y2="8" stroke="#000" stroke-width="1"/>
+  <line x1="4" y1="10" x2="12" y2="10" stroke="#000" stroke-width="1"/>
+  <line x1="4" y1="12" x2="8" y2="12" stroke="#000" stroke-width="1"/>
+  <rect x="6" y="1" width="4" height="2" fill="#c0c0c0" stroke="#000" stroke-width="0.5"/>
+</svg>`;
+
 export const DESKTOP_ICONS: DesktopIconData[] = [
   {
     id: "readme",
     label: "Readme.txt",
+    windowTitle: "Readme.txt - Notepad",
     icon: ICON_NOTEPAD,
     defaultWidth: 450,
     defaultHeight: 350,
@@ -81,12 +92,22 @@ export const DESKTOP_ICONS: DesktopIconData[] = [
     defaultWidth: 300,
     defaultHeight: 380,
   },
+  {
+    id: "cv",
+    label: "CV.txt",
+    windowTitle: "CV.txt - Notepad",
+    icon: ICON_CV,
+    defaultWidth: 500,
+    defaultHeight: 450,
+  },
 ];
 
+// Grid: 80px wide × 90px tall per cell — must stay aligned with dropIcons() in the store
 export const ICON_POSITIONS: Record<string, IconPosition> = {
-  readme: { top: 20, left: 20 },
-  projects: { top: 120, left: 20 },
-  mail: { top: 220, left: 20 },
-  snake: { top: 320, left: 20 },
-  minesweeper: { top: 420, left: 20 },
+  readme:      { top:   0, left: 0 },
+  projects:    { top:  90, left: 0 },
+  mail:        { top: 180, left: 0 },
+  snake:       { top: 270, left: 0 },
+  minesweeper: { top: 360, left: 0 },
+  cv:          { top: 450, left: 0 },
 };

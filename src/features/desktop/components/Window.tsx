@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { useDesktopStore } from "../store/desktop-store";
 import type { WindowInstance } from "@/types";
@@ -7,21 +8,76 @@ import type { WindowInstance } from "@/types";
 interface WindowProps {
   windowData: WindowInstance;
   children: React.ReactNode;
+  desktopWidth: number;
+  desktopHeight: number;
 }
 
-export default function Window({ windowData, children }: WindowProps) {
-  const { closeWindow, focusWindow, updateWindowPosition, updateWindowSize } =
-    useDesktopStore();
+export default function Window({
+  windowData,
+  children,
+  desktopWidth,
+  desktopHeight,
+}: WindowProps) {
+  const {
+    closeWindow,
+    focusWindow,
+    minimizeWindow,
+    maximizeWindow,
+    restoreWindow,
+    updateWindowPosition,
+    updateWindowSize,
+    focusedWindowId,
+  } = useDesktopStore();
+
+  const lastClickTime = useRef(0);
+  const isActive = focusedWindowId === windowData.id;
+
+  // Alt+F4 closes the focused window
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === "F4" && isActive) {
+        e.preventDefault();
+        closeWindow(windowData.id);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isActive, closeWindow, windowData.id]);
+
+  if (windowData.minimized) return null;
+
+  const handleTitleBarClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime.current < 400) {
+      // Double-click: toggle maximize/restore
+      if (windowData.maximized) {
+        restoreWindow(windowData.id);
+      } else {
+        maximizeWindow(windowData.id, desktopWidth, desktopHeight);
+      }
+    }
+    lastClickTime.current = now;
+  };
+
+  const rndPosition = windowData.maximized
+    ? { x: 0, y: 0 }
+    : windowData.position;
+
+  const rndSize = windowData.maximized
+    ? { width: desktopWidth, height: desktopHeight }
+    : windowData.size;
 
   return (
     <Rnd
-      position={windowData.position}
-      size={windowData.size}
+      position={rndPosition}
+      size={rndSize}
       style={{ zIndex: windowData.zIndex }}
       dragHandleClassName="title-bar"
       bounds="parent"
       minWidth={200}
       minHeight={150}
+      disableDragging={windowData.maximized}
+      enableResizing={!windowData.maximized}
       onMouseDown={() => focusWindow(windowData.id)}
       onDragStop={(_e, d) => {
         updateWindowPosition(windowData.id, { x: d.x, y: d.y });
@@ -36,21 +92,35 @@ export default function Window({ windowData, children }: WindowProps) {
     >
       <div
         className="window"
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}
       >
-        <div className="title-bar">
+        <div className="title-bar" onClick={handleTitleBarClick}>
           <div className="title-bar-text">{windowData.title}</div>
           <div className="title-bar-controls">
-            <button aria-label="Minimize" />
-            <button aria-label="Maximize" />
+            <button
+              aria-label="Minimize"
+              onClick={(e) => {
+                e.stopPropagation();
+                minimizeWindow(windowData.id);
+              }}
+            />
+            <button
+              aria-label={windowData.maximized ? "Restore" : "Maximize"}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (windowData.maximized) {
+                  restoreWindow(windowData.id);
+                } else {
+                  maximizeWindow(windowData.id, desktopWidth, desktopHeight);
+                }
+              }}
+            />
             <button
               aria-label="Close"
-              onClick={() => closeWindow(windowData.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeWindow(windowData.id);
+              }}
             />
           </div>
         </div>

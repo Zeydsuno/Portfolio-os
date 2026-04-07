@@ -2,6 +2,8 @@
 export interface DesktopIconData {
   id: string;
   label: string;
+  /** Title shown in the window title bar. Defaults to label if not set. */
+  windowTitle?: string;
   icon: string; // SVG string for the pixel art icon
   defaultWidth: number;
   defaultHeight: number;
@@ -19,6 +21,12 @@ export interface WindowSize {
   height: number;
 }
 
+/** Saved window geometry before maximize */
+export interface PreMaximizeState {
+  position: WindowPosition;
+  size: WindowSize;
+}
+
 /** An open window instance on the desktop */
 export interface WindowInstance {
   id: string;
@@ -26,6 +34,9 @@ export interface WindowInstance {
   position: WindowPosition;
   size: WindowSize;
   zIndex: number;
+  minimized: boolean;
+  maximized: boolean;
+  preMaximizeState: PreMaximizeState | null;
 }
 
 /** Grid position for a desktop icon */
