@@ -40,6 +40,18 @@ body {
   100% { transform: translateX(320px); }
 }
 
+/* Win98 window minimize animation */
+@keyframes win98Minimize {
+  0%   { transform: scaleY(1) scaleX(1); opacity: 1; }
+  60%  { transform: scaleY(0.08) scaleX(0.85); opacity: 0.6; }
+  100% { transform: scaleY(0) scaleX(0.5); opacity: 0; }
+}
+.win98-minimizing {
+  animation: win98Minimize 220ms ease-in forwards;
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+
 .boot-scroll-bar {
   position: absolute;
   top: 0;

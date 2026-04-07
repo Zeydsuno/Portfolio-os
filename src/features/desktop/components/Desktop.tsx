@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useDesktopStore } from "../store/desktop-store";
 import { DESKTOP_ICONS } from "../data/desktop-items";
 
@@ -12,28 +12,36 @@ interface Marquee {
 }
 
 const ICON_W = 72;
-const ICON_H = 80;
+const ICON_H = 90;
 import DesktopIcon from "./DesktopIcon";
 import Window from "./Window";
 import Taskbar from "@/features/taskbar/components/Taskbar";
 import BootScreen from "./BootScreen";
 import NotepadWrapper from "./NotepadWrapper";
+import { playStartup } from "../utils/sounds";
 import ReadmeContent from "@/features/portfolio/components/ReadmeContent";
 import ProjectsContent from "@/features/portfolio/components/ProjectsContent";
 import MailContent from "@/features/portfolio/components/MailContent";
 import CVContent from "@/features/portfolio/components/CVContent";
+import MyComputerContent from "@/features/portfolio/components/MyComputerContent";
+import RecycleBinContent from "@/features/portfolio/components/RecycleBinContent";
+import PaintContent from "@/features/portfolio/components/PaintContent";
 import SnakeGame from "@/features/games/snake/SnakeGame";
 import Minesweeper from "@/features/games/minesweeper/Minesweeper";
+import Screensaver from "./Screensaver";
 import type { ReactNode } from "react";
 
 /** Maps window IDs to their content components */
 const WINDOW_CONTENT: Record<string, ReactNode> = {
-  readme: <NotepadWrapper><ReadmeContent /></NotepadWrapper>,
-  projects: <ProjectsContent />,
-  mail: <MailContent />,
-  cv: <NotepadWrapper><CVContent /></NotepadWrapper>,
-  snake: <SnakeGame />,
+  readme:      <NotepadWrapper><ReadmeContent /></NotepadWrapper>,
+  projects:    <ProjectsContent />,
+  mail:        <MailContent />,
+  cv:          <NotepadWrapper><CVContent /></NotepadWrapper>,
+  snake:       <SnakeGame />,
   minesweeper: <Minesweeper />,
+  mycomputer:  <MyComputerContent />,
+  recycle:     <RecycleBinContent />,
+  paint:       <PaintContent />,
 };
 
 interface ContextMenu {
@@ -44,13 +52,35 @@ interface ContextMenu {
 const TASKBAR_HEIGHT = 32;
 
 export default function Desktop() {
-  const { windows, selectIcon, selectIcons, iconPositions } = useDesktopStore();
+  const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaperColor } = useDesktopStore();
   const [booted, setBooted] = useState(false);
+  const [showScreensaver, setShowScreensaver] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const IDLE_MS = 120_000;
+
+  const resetIdle = useCallback(() => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => setShowScreensaver(true), IDLE_MS);
+  }, []);
+
+  useEffect(() => {
+    resetIdle();
+    window.addEventListener("mousemove", resetIdle);
+    window.addEventListener("keydown", resetIdle);
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      window.removeEventListener("mousemove", resetIdle);
+      window.removeEventListener("keydown", resetIdle);
+    };
+  }, [resetIdle]);
   const desktopRef = useRef<HTMLDivElement>(null);
   const suppressNextClick = useRef(false);
-  const handleBootComplete = useCallback(() => setBooted(true), []);
+  const handleBootComplete = useCallback(() => {
+    setBooted(true);
+    playStartup();
+  }, []);
 
   const desktopWidth = desktopRef.current?.offsetWidth ?? (typeof window !== "undefined" ? window.innerWidth : 1280);
   const desktopHeight = desktopRef.current?.offsetHeight ?? (typeof window !== "undefined" ? window.innerHeight - TASKBAR_HEIGHT : 720);
@@ -132,7 +162,7 @@ export default function Desktop() {
   return (
     <div
       className="relative h-screen w-screen overflow-hidden"
-      style={{ backgroundColor: "#008080" }}
+      style={{ backgroundColor: wallpaperColor }}
       onClick={() => setContextMenu(null)}
     >
       {!booted && <BootScreen onComplete={handleBootComplete} />}
@@ -196,7 +226,7 @@ export default function Desktop() {
           >
             <div className="window-body" style={{ padding: 0, margin: 0 }}>
               {[
-                { label: "Arrange Icons", hasSubmenu: true },
+                { label: "Arrange Icons", action: () => arrangeIcons(desktopHeight) },
                 { label: "Refresh", action: () => window.location.reload() },
                 null,
                 { label: "New", hasSubmenu: true },
@@ -250,6 +280,11 @@ export default function Desktop() {
           </div>
         )}
       </div>
+
+      {/* Screensaver */}
+      {showScreensaver && booted && (
+        <Screensaver onDismiss={() => { setShowScreensaver(false); resetIdle(); }} />
+      )}
 
       {/* Taskbar — fixed at bottom, always on top */}
       <Taskbar />

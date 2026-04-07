@@ -6,7 +6,7 @@ import type {
   WindowSize,
   IconPosition,
 } from "@/types";
-import { ICON_POSITIONS } from "../data/desktop-items";
+import { DESKTOP_ICONS, ICON_POSITIONS } from "../data/desktop-items";
 
 interface DesktopState {
   windows: WindowInstance[];
@@ -29,6 +29,13 @@ interface DesktopState {
   moveIcon: (id: string, position: IconPosition) => void;
   moveMultipleIcons: (updates: Record<string, IconPosition>) => void;
   dropIcons: (ids: string[], maxTop: number, maxLeft: number) => void;
+  arrangeIcons: (desktopHeight: number) => void;
+  muted: boolean;
+  toggleMute: () => void;
+  wallpaperColor: string;
+  setWallpaperColor: (color: string) => void;
+  recycleBinFull: boolean;
+  emptyRecycleBin: () => void;
 }
 
 export const useDesktopStore = create<DesktopState>((set, get) => ({
@@ -37,6 +44,9 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   focusedWindowId: null,
   iconPositions: { ...ICON_POSITIONS },
   selectedIcons: [],
+  muted: false,
+  wallpaperColor: "#008080",
+  recycleBinFull: false,
 
   openWindow: (icon) => {
     const { windows, nextZIndex, focusWindow } = get();
@@ -82,6 +92,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
     set((state) => ({
       windows: state.windows.filter((w) => w.id !== id),
       focusedWindowId: state.focusedWindowId === id ? null : state.focusedWindowId,
+      recycleBinFull: true,
     }));
   },
 
@@ -250,5 +261,22 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 
       return { iconPositions: { ...state.iconPositions, ...updates } };
     });
+  },
+
+  toggleMute: () => set((state) => ({ muted: !state.muted })),
+  setWallpaperColor: (color) => set({ wallpaperColor: color }),
+  emptyRecycleBin: () => set({ recycleBinFull: false }),
+
+  arrangeIcons: (desktopHeight) => {
+    const GRID_W = 80;
+    const GRID_H = 90;
+    const maxRows = Math.max(1, Math.floor(desktopHeight / GRID_H));
+    const newPositions: Record<string, IconPosition> = {};
+    DESKTOP_ICONS.forEach((icon, i) => {
+      const col = Math.floor(i / maxRows);
+      const row = i % maxRows;
+      newPositions[icon.id] = { top: row * GRID_H, left: col * GRID_W };
+    });
+    set({ iconPositions: newPositions });
   },
 }));

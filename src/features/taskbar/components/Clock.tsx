@@ -7,11 +7,18 @@ export default function Clock() {
 
   useEffect(() => {
     const update = () => {
+      const now = new Date();
       if (ref.current) {
-        ref.current.textContent = new Date().toLocaleTimeString("en-US", {
+        ref.current.textContent = now.toLocaleTimeString("en-US", {
           hour: "numeric",
           minute: "2-digit",
           hour12: true,
+        });
+        ref.current.title = now.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
         });
       }
     };

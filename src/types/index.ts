@@ -4,7 +4,8 @@ export interface DesktopIconData {
   label: string;
   /** Title shown in the window title bar. Defaults to label if not set. */
   windowTitle?: string;
-  icon: string; // SVG string for the pixel art icon
+  icon: string; // SVG string for the pixel art icon (empty/default state)
+  iconFull?: string; // SVG for "full" state (e.g. Recycle Bin)
   defaultWidth: number;
   defaultHeight: number;
 }

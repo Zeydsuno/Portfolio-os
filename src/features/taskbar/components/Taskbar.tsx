@@ -6,6 +6,8 @@ import { DESKTOP_ICONS } from "@/features/desktop/data/desktop-items";
 import Clock from "./Clock";
 import ShutdownDialog from "@/features/desktop/components/ShutdownDialog";
 import RunDialog from "@/features/desktop/components/RunDialog";
+import BSODScreen from "@/features/desktop/components/BSODScreen";
+import DisplayPropertiesDialog from "@/features/desktop/components/DisplayPropertiesDialog";
 
 const FONT: React.CSSProperties = {
   fontFamily: "'Press Start 2P', cursive",
@@ -31,15 +33,17 @@ function SmallIcon({ svg }: { svg: string }) {
 interface TrayIconProps {
   label: string;
   children: React.ReactNode;
+  onClick?: () => void;
 }
 
-function TrayIcon({ label, children }: TrayIconProps) {
+function TrayIcon({ label, children, onClick }: TrayIconProps) {
   const [hovered, setHovered] = useState(false);
   return (
     <div
-      style={{ position: "relative", display: "flex", alignItems: "center", padding: "0 4px", cursor: "default" }}
+      style={{ position: "relative", display: "flex", alignItems: "center", padding: "0 4px", cursor: onClick ? "pointer" : "default" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
     >
       <span style={{ fontSize: "14px", lineHeight: 1 }}>{children}</span>
       {hovered && (
@@ -145,11 +149,13 @@ function Submenu({ items, onAction }: SubmenuProps) {
 }
 
 export default function Taskbar() {
-  const { windows, focusedWindowId, openWindow, toggleWindowFromTaskbar } = useDesktopStore();
+  const { windows, focusedWindowId, openWindow, toggleWindowFromTaskbar, muted, toggleMute } = useDesktopStore();
   const [startOpen, setStartOpen] = useState(false);
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
   const [showShutdown, setShowShutdown] = useState(false);
   const [showRun, setShowRun] = useState(false);
+  const [showBSOD, setShowBSOD] = useState(false);
+  const [showDisplayProps, setShowDisplayProps] = useState(false);
   const startRef = useRef<HTMLDivElement>(null);
 
   // Close start menu when clicking outside
@@ -232,8 +238,15 @@ export default function Taskbar() {
 
   return (
     <>
-      {showShutdown && <ShutdownDialog onClose={() => setShowShutdown(false)} />}
+      {showShutdown && (
+        <ShutdownDialog
+          onClose={() => setShowShutdown(false)}
+          onBSOD={() => { setShowShutdown(false); setShowBSOD(true); }}
+        />
+      )}
       {showRun && <RunDialog onClose={() => setShowRun(false)} />}
+      {showBSOD && <BSODScreen onDismiss={() => setShowBSOD(false)} />}
+      {showDisplayProps && <DisplayPropertiesDialog onClose={() => setShowDisplayProps(false)} />}
 
       <div className="fixed bottom-0 left-0 right-0 z-[9999]" ref={startRef}>
         {/* ── Start Menu ───────────────────────────────────────── */}
@@ -398,8 +411,10 @@ export default function Taskbar() {
             height: "22px",
             gap: "2px",
           }}>
-            <TrayIcon label="Volume: 100%">🔊</TrayIcon>
-            <TrayIcon label="Display Settings">🖥️</TrayIcon>
+            <TrayIcon label={muted ? "Volume: Muted (click to unmute)" : "Volume: 100% (click to mute)"} onClick={toggleMute}>
+              {muted ? "🔇" : "🔊"}
+            </TrayIcon>
+            <TrayIcon label="Display Properties" onClick={() => setShowDisplayProps(true)}>🖥️</TrayIcon>
             <div style={{
               width: "1px",
               height: "16px",

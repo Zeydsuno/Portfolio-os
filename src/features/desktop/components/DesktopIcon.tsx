@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { useDesktopStore } from "../store/desktop-store";
+import { playWindowOpen } from "../utils/sounds";
 import type { DesktopIconData, IconPosition } from "@/types";
 
 interface DesktopIconProps {
@@ -16,6 +17,7 @@ export default function DesktopIcon({ icon }: DesktopIconProps) {
     dropIcons,
     selectedIcons,
     iconPositions,
+    recycleBinFull,
   } = useDesktopStore();
 
   const position = iconPositions[icon.id] ?? { top: 20, left: 20 };
@@ -79,6 +81,7 @@ export default function DesktopIcon({ icon }: DesktopIconProps) {
         const now = Date.now();
         if (now - lastClickTime.current < 400) {
           // Double-click → open
+          playWindowOpen();
           openWindow(icon);
           selectIcon(null);
         } else if (wasSelected && selectedIcons.length > 1) {
@@ -108,7 +111,7 @@ export default function DesktopIcon({ icon }: DesktopIconProps) {
         }}
       >
         <div
-          dangerouslySetInnerHTML={{ __html: icon.icon }}
+          dangerouslySetInnerHTML={{ __html: (icon.iconFull && recycleBinFull) ? icon.iconFull : icon.icon }}
           style={{
             imageRendering: "pixelated",
             filter: isSelected

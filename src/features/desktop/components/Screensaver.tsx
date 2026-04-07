@@ -1,0 +1,96 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
+interface ScreensaverProps {
+  onDismiss: () => void;
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+}
+
+const COLORS = [
+  "#ff0000", "#00ff00", "#0000ff", "#ffff00",
+  "#ff00ff", "#00ffff", "#ffffff", "#ff8800",
+  "#88ff00", "#0088ff",
+];
+
+export default function Screensaver({ onDismiss }: ScreensaverProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext("2d")!;
+
+    const particles: Particle[] = Array.from({ length: 6 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 1.5),
+      vy: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 1.5),
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    }));
+
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    let animId: number;
+
+    const draw = () => {
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        let bounced = false;
+        if (p.x < 20) { p.x = 20; p.vx = Math.abs(p.vx); bounced = true; }
+        if (p.x > canvas.width - 120) { p.x = canvas.width - 120; p.vx = -Math.abs(p.vx); bounced = true; }
+        if (p.y < 16) { p.y = 16; p.vy = Math.abs(p.vy); bounced = true; }
+        if (p.y > canvas.height - 16) { p.y = canvas.height - 16; p.vy = -Math.abs(p.vy); bounced = true; }
+        if (bounced) p.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+        ctx.font = "bold 16px 'Press Start 2P', monospace";
+        ctx.fillStyle = p.color;
+        ctx.fillText("⊞ Windows 98", p.x, p.y);
+      }
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    const dismiss = () => onDismiss();
+    window.addEventListener("keydown", dismiss);
+    window.addEventListener("mousemove", dismiss);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("keydown", dismiss);
+      window.removeEventListener("mousemove", dismiss);
+    };
+  }, [onDismiss]);
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 99990,
+        cursor: "none",
+        backgroundColor: "#000",
+      }}
+      onClick={onDismiss}
+    >
+      <canvas ref={canvasRef} style={{ display: "block" }} />
+    </div>
+  );
+}

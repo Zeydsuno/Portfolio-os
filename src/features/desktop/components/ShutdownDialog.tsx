@@ -6,9 +6,10 @@ type ShutdownOption = "shutdown" | "restart" | "msdos";
 
 interface ShutdownDialogProps {
   onClose: () => void;
+  onBSOD?: () => void;
 }
 
-export default function ShutdownDialog({ onClose }: ShutdownDialogProps) {
+export default function ShutdownDialog({ onClose, onBSOD }: ShutdownDialogProps) {
   const [selected, setSelected] = useState<ShutdownOption>("shutdown");
   const [turningOff, setTurningOff] = useState(false);
 
@@ -21,6 +22,7 @@ export default function ShutdownDialog({ onClose }: ShutdownDialogProps) {
       setTimeout(() => window.location.reload(), 1500);
     } else {
       onClose();
+      onBSOD?.();
     }
   };
 

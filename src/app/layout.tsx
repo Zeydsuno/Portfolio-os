@@ -5,6 +5,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Portfolio — Windows 98",
   description: "Interactive portfolio with a Windows 98 desktop experience",
+  openGraph: {
+    title: "Portfolio — Windows 98",
+    description: "Interactive portfolio with a Windows 98 desktop experience",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Portfolio — Windows 98",
+    description: "Interactive portfolio with a Windows 98 desktop experience",
+  },
 };
 
 export default function RootLayout({

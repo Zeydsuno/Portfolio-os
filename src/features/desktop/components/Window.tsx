@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
 import { useDesktopStore } from "../store/desktop-store";
+import { playWindowClose } from "../utils/sounds";
 import type { WindowInstance } from "@/types";
 
 interface WindowProps {
@@ -31,6 +32,19 @@ export default function Window({
 
   const lastClickTime = useRef(0);
   const isActive = focusedWindowId === windowData.id;
+  const [minimizing, setMinimizing] = useState(false);
+  const minimizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (minimizeTimer.current) clearTimeout(minimizeTimer.current); }, []);
+
+  const handleMinimize = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMinimizing(true);
+    minimizeTimer.current = setTimeout(() => {
+      setMinimizing(false);
+      minimizeWindow(windowData.id);
+    }, 220);
+  };
 
   // Alt+F4 closes the focused window
   useEffect(() => {
@@ -91,19 +105,13 @@ export default function Window({
       }}
     >
       <div
-        className="window"
+        className={`window${minimizing ? " win98-minimizing" : ""}`}
         style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}
       >
         <div className="title-bar" onClick={handleTitleBarClick}>
           <div className="title-bar-text">{windowData.title}</div>
           <div className="title-bar-controls">
-            <button
-              aria-label="Minimize"
-              onClick={(e) => {
-                e.stopPropagation();
-                minimizeWindow(windowData.id);
-              }}
-            />
+            <button aria-label="Minimize" onClick={handleMinimize} />
             <button
               aria-label={windowData.maximized ? "Restore" : "Maximize"}
               onClick={(e) => {
@@ -119,6 +127,7 @@ export default function Window({
               aria-label="Close"
               onClick={(e) => {
                 e.stopPropagation();
+                playWindowClose();
                 closeWindow(windowData.id);
               }}
             />

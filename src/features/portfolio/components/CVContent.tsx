@@ -91,7 +91,7 @@ export default function CVContent() {
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        <a href="/Attidmese_Bunsua_CV.pdf" download style={{ textDecoration: "none" }}>
+        <a href="/file/Attidmese_Bunsua_CV.docx" download style={{ textDecoration: "none" }}>
           <button style={{ fontSize: "9px" }}>Save As...</button>
         </a>
       </div>
