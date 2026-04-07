@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio OS
+
+An interactive portfolio built as a **Windows 98 desktop experience** — complete with draggable windows, pixel art icons, a Start menu, and playable games.
+
+![Windows 98 Portfolio](https://img.shields.io/badge/Style-Windows%2098-teal?style=flat-square)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+
+## Features
+
+- **Desktop Environment** — teal background with pixel art icons, double-click to open windows
+- **Draggable & Resizable Windows** — powered by `react-rnd`, bounded to the desktop area
+- **Z-Index Management** — click a window to bring it to front (Zustand monotonic counter)
+- **Start Menu** — lists all apps with icons, click to open
+- **Real-time Clock** — live clock in the taskbar
+- **Snake.exe** — canvas-based Snake game with 8-bit style
+- **Minesweeper.exe** — classic 9×9 Minesweeper with flood-fill reveal
+- **Mobile Responsive** — vertical card layout for screens under 768px
+
+## Tech Stack
+
+| Library | Purpose |
+|---|---|
+| Next.js 16 (App Router) | Framework |
+| TypeScript | Type safety |
+| Tailwind CSS | Utility styling |
+| 98.css | Windows 98 UI components |
+| react-rnd | Draggable/resizable windows |
+| Zustand | Window state & z-index management |
+| Press Start 2P | 8-bit pixel font |
+
+## Project Structure
+
+```
+src/
+├── features/
+│   ├── desktop/       # Icons, windows, store
+│   ├── taskbar/       # Taskbar + clock
+│   ├── games/
+│   │   ├── snake/
+│   │   └── minesweeper/
+│   ├── portfolio/     # Readme, Projects, Mail content
+│   └── mobile/        # Mobile layout
+└── types/             # Shared TypeScript interfaces
+```
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:2025](http://localhost:2025) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Controls
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Action | Result |
+|---|---|
+| Double-click icon | Open window |
+| Drag title bar | Move window |
+| Drag window edge | Resize window |
+| Click title bar X | Close window |
+| Click Start | Open Start menu |
+| Arrow keys | Control Snake |
+| Right-click cell | Flag mine |
