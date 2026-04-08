@@ -32,6 +32,7 @@ import SnakeGame from "@/features/games/snake/SnakeGame";
 import Minesweeper from "@/features/games/minesweeper/Minesweeper";
 import Screensaver from "./Screensaver";
 import BSODScreen from "./BSODScreen";
+import DisplayPropertiesDialog from "./DisplayPropertiesDialog";
 import type { ReactNode } from "react";
 
 /** Maps window IDs to their content components */
@@ -68,10 +69,11 @@ const KONAMI = [
 ];
 
 export default function Desktop() {
-  const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaperColor, fontScale } = useDesktopStore();
+  const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaper, fontScale } = useDesktopStore();
   const [booted, setBooted] = useState(false);
   const [showScreensaver, setShowScreensaver] = useState(false);
   const [showBSOD, setShowBSOD] = useState(false);
+  const [showDisplayProps, setShowDisplayProps] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [iconContextMenu, setIconContextMenu] = useState<IconContextMenu | null>(null);
   const [errorDialog, setErrorDialog] = useState<string | null>(null);
@@ -210,7 +212,13 @@ export default function Desktop() {
   return (
     <div
       className="relative h-screen w-screen overflow-hidden"
-      style={{ backgroundColor: wallpaperColor }}
+      style={
+        wallpaper.type === "image"
+          ? { backgroundImage: `url(${wallpaper.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+          : wallpaper.type === "gradient"
+          ? { background: wallpaper.value }
+          : { backgroundColor: wallpaper.value }
+      }
       onClick={() => { setContextMenu(null); setIconContextMenu(null); }}
     >
       {!booted && <BootScreen onComplete={handleBootComplete} />}
@@ -279,7 +287,7 @@ export default function Desktop() {
                 null,
                 { label: "New", hasSubmenu: true },
                 null,
-                { label: "Properties", disabled: true },
+                { label: "Properties", action: () => setShowDisplayProps(true) },
               ].map((item, i) =>
                 item === null ? (
                   <div
@@ -412,6 +420,9 @@ export default function Desktop() {
           </div>
         )}
       </div>
+
+      {/* Display Properties dialog */}
+      {showDisplayProps && <DisplayPropertiesDialog onClose={() => setShowDisplayProps(false)} />}
 
       {/* Konami BSOD */}
       {showBSOD && <BSODScreen onDismiss={() => setShowBSOD(false)} />}

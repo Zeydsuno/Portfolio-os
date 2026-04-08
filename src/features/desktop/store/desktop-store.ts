@@ -5,6 +5,7 @@ import type {
   WindowPosition,
   WindowSize,
   IconPosition,
+  WallpaperEntry,
 } from "@/types";
 import { DESKTOP_ICONS, ICON_POSITIONS } from "../data/desktop-items";
 
@@ -32,8 +33,8 @@ interface DesktopState {
   arrangeIcons: (desktopHeight: number) => void;
   muted: boolean;
   toggleMute: () => void;
-  wallpaperColor: string;
-  setWallpaperColor: (color: string) => void;
+  wallpaper: WallpaperEntry;
+  setWallpaper: (wallpaper: WallpaperEntry) => void;
   recycleBinFull: boolean;
   emptyRecycleBin: () => void;
   fontScale: number;
@@ -47,7 +48,13 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   iconPositions: { ...ICON_POSITIONS },
   selectedIcons: [],
   muted: false,
-  wallpaperColor: "#008080",
+  wallpaper: {
+    id: "bliss",
+    label: "Bliss",
+    type: "gradient",
+    value: "linear-gradient(180deg, #1e6bb8 0%, #4399d5 28%, #90c8e8 48%, #7bc840 52%, #4a8a1a 100%)",
+    thumb: "linear-gradient(180deg, #1e6bb8 0%, #90c8e8 48%, #7bc840 52%, #4a8a1a 100%)",
+  },
   recycleBinFull: false,
   fontScale: 1,
 
@@ -267,7 +274,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   },
 
   toggleMute: () => set((state) => ({ muted: !state.muted })),
-  setWallpaperColor: (color) => set({ wallpaperColor: color }),
+  setWallpaper: (wallpaper) => set({ wallpaper }),
   emptyRecycleBin: () => set({ recycleBinFull: false }),
   setFontScale: (scale) => set({ fontScale: scale }),
 

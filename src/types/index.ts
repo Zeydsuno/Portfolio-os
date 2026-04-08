@@ -45,3 +45,17 @@ export interface IconPosition {
   top: number;
   left: number;
 }
+
+/** Wallpaper type discriminator */
+export type WallpaperType = "color" | "gradient" | "image";
+
+/** A wallpaper preset or custom entry */
+export interface WallpaperEntry {
+  id: string;
+  label: string;
+  type: WallpaperType;
+  /** CSS color string, CSS gradient string, or image URL */
+  value: string;
+  /** Thumbnail CSS (gradient or color) for the picker preview */
+  thumb: string;
+}
