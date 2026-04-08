@@ -117,8 +117,11 @@ export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProp
           outlineOffset: "2px",
         }}
       >
-        <div
-          dangerouslySetInnerHTML={{ __html: (icon.iconFull && recycleBinFull) ? icon.iconFull : icon.icon }}
+        <img
+          src={`data:image/svg+xml;base64,${btoa((icon.iconFull && recycleBinFull) ? icon.iconFull : icon.icon)}`}
+          width={48}
+          height={48}
+          alt={icon.label}
           style={{
             imageRendering: "pixelated",
             filter: isSelected

@@ -16,16 +16,12 @@ const FONT: React.CSSProperties = {
 /** Scales SVG to 16×16 for taskbar/menu use */
 function SmallIcon({ svg }: { svg: string }) {
   return (
-    <span
-      dangerouslySetInnerHTML={{ __html: svg }}
-      style={{
-        display: "inline-flex",
-        width: "16px",
-        height: "16px",
-        flexShrink: 0,
-        imageRendering: "pixelated",
-      }}
-      className="[&>svg]:w-full [&>svg]:h-full"
+    <img
+      src={`data:image/svg+xml;base64,${btoa(svg)}`}
+      width={16}
+      height={16}
+      alt=""
+      style={{ imageRendering: "pixelated", flexShrink: 0 }}
     />
   );
 }

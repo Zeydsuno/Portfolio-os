@@ -50,7 +50,7 @@ export default function MailContent() {
       </p>
       <div className="field-row-stacked" style={{ marginBottom: "8px" }}>
         <label htmlFor="mail-to">To:</label>
-        <input id="mail-to" type="text" defaultValue="Attidmese.bunsua@gmail.com" readOnly />
+        <input id="mail-to" type="text" defaultValue="Attidmese B. (Portfolio)" readOnly />
       </div>
       <div className="field-row-stacked" style={{ marginBottom: "8px" }}>
         <label htmlFor="mail-name">Your Name: *</label>
