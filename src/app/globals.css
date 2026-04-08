@@ -1,10 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 @import "tailwindcss";
 
+:root {
+  --ui-scale: 1.15;
+  --win98-font: "MS Sans Serif", "Tahoma", "Segoe UI", sans-serif;
+  --pixel-font: "Press Start 2P", cursive;
+}
+
 body {
   margin: 0;
-  font-family: "Press Start 2P", cursive;
+  font-family: var(--win98-font);
   image-rendering: pixelated;
+  font-size: calc(12px * var(--ui-scale));
 }
 
 /* Prevent Tailwind preflight from stripping 98.css default button/input styles.
@@ -14,24 +21,24 @@ body {
 .window-body select,
 .window-body textarea {
   all: revert;
-  font-family: "Press Start 2P", cursive;
+  font-family: var(--win98-font);
 }
 
 /* Status bar buttons also need revert */
 .status-bar button {
   all: revert;
-  font-family: "Press Start 2P", cursive;
+  font-family: var(--win98-font);
 }
 
-/* Pixel font sizing adjustments — Press Start 2P is large at default sizes */
+/* Title bar and status bar sizing */
 .window .title-bar-text {
-  font-family: "Press Start 2P", cursive;
-  font-size: 10px;
+  font-family: var(--win98-font);
+  font-size: calc(11px * var(--ui-scale));
 }
 
 .status-bar {
-  font-family: "Press Start 2P", cursive;
-  font-size: 10px;
+  font-family: var(--win98-font);
+  font-size: calc(11px * var(--ui-scale));
 }
 
 /* Windows 98 boot screen — scrolling loading bar */
@@ -55,6 +62,11 @@ body {
 /* Font scale zoom — controlled via --content-zoom CSS variable */
 .window-body {
   zoom: var(--content-zoom, 1);
+}
+
+/* Pixel font — use only for boot screen and screensaver */
+.pixel-font {
+  font-family: var(--pixel-font);
 }
 
 .boot-scroll-bar {
