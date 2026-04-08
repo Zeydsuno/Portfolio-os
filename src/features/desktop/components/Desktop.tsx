@@ -27,9 +27,11 @@ import CVContent from "@/features/portfolio/components/CVContent";
 import MyComputerContent from "@/features/portfolio/components/MyComputerContent";
 import RecycleBinContent from "@/features/portfolio/components/RecycleBinContent";
 import PaintContent from "@/features/portfolio/components/PaintContent";
+import IEContent from "@/features/portfolio/components/IEContent";
 import SnakeGame from "@/features/games/snake/SnakeGame";
 import Minesweeper from "@/features/games/minesweeper/Minesweeper";
 import Screensaver from "./Screensaver";
+import BSODScreen from "./BSODScreen";
 import type { ReactNode } from "react";
 
 /** Maps window IDs to their content components */
@@ -43,6 +45,7 @@ const WINDOW_CONTENT: Record<string, ReactNode> = {
   mycomputer:  <MyComputerContent />,
   recycle:     <RecycleBinContent />,
   paint:       <PaintContent />,
+  ie:          <IEContent />,
 };
 
 interface ContextMenu {
@@ -58,15 +61,23 @@ interface IconContextMenu {
 
 const TASKBAR_HEIGHT = 32;
 
+const KONAMI = [
+  "ArrowUp","ArrowUp","ArrowDown","ArrowDown",
+  "ArrowLeft","ArrowRight","ArrowLeft","ArrowRight",
+  "KeyB","KeyA",
+];
+
 export default function Desktop() {
   const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaperColor, fontScale } = useDesktopStore();
   const [booted, setBooted] = useState(false);
   const [showScreensaver, setShowScreensaver] = useState(false);
+  const [showBSOD, setShowBSOD] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [iconContextMenu, setIconContextMenu] = useState<IconContextMenu | null>(null);
   const [errorDialog, setErrorDialog] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const konamiProgress = useRef<number>(0);
   const IDLE_MS = 120_000;
 
   const resetIdle = useCallback(() => {
@@ -84,6 +95,24 @@ export default function Desktop() {
       window.removeEventListener("keydown", resetIdle);
     };
   }, [resetIdle]);
+
+  useEffect(() => {
+    let progress = 0;
+    const handler = (e: KeyboardEvent) => {
+      const code = e.code;
+      if (code === KONAMI[progress]) {
+        progress++;
+        if (progress === KONAMI.length) {
+          progress = 0;
+          setShowBSOD(true);
+        }
+      } else {
+        progress = code === KONAMI[0] ? 1 : 0;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
   useEffect(() => {
     document.documentElement.style.setProperty("--content-zoom", String(fontScale));
   }, [fontScale]);
@@ -383,6 +412,9 @@ export default function Desktop() {
           </div>
         )}
       </div>
+
+      {/* Konami BSOD */}
+      {showBSOD && <BSODScreen onDismiss={() => setShowBSOD(false)} />}
 
       {/* Screensaver */}
       {showScreensaver && booted && (

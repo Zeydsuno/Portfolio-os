@@ -67,6 +67,23 @@ export default function MobileLayout() {
         flexDirection: "column",
       }}
     >
+      {/* Desktop hint banner */}
+      <div
+        style={{
+          background: "#ffff80",
+          borderBottom: "1px solid #808000",
+          padding: "4px 10px",
+          fontSize: "8px",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          ...FONT,
+        }}
+      >
+        <span>🖥️</span>
+        <span style={{ color: "#000" }}>Best viewed on desktop for full experience</span>
+      </div>
+
       {/* Top bar — Win98 title bar style */}
       <div
         style={{

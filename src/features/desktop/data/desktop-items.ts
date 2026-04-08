@@ -94,6 +94,16 @@ const ICON_PAINT = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" 
   <line x1="9" y1="2" x2="9" y2="4" stroke="#fff" stroke-width="0.5"/>
 </svg>`;
 
+const ICON_IE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <circle cx="8" cy="8" r="6" fill="#fff" stroke="#000080" stroke-width="1"/>
+  <ellipse cx="8" cy="8" rx="3" ry="6" fill="none" stroke="#000080" stroke-width="1"/>
+  <line x1="2" y1="8" x2="14" y2="8" stroke="#000080" stroke-width="1"/>
+  <line x1="3" y1="5" x2="13" y2="5" stroke="#000080" stroke-width="0.5"/>
+  <line x1="3" y1="11" x2="13" y2="11" stroke="#000080" stroke-width="0.5"/>
+  <circle cx="12" cy="4" r="3" fill="#ffcc00" stroke="#ff8800" stroke-width="0.5"/>
+  <text x="10.5" y="6" font-size="4" fill="#000" font-family="serif" font-style="italic">e</text>
+</svg>`;
+
 export const DESKTOP_ICONS: DesktopIconData[] = [
   {
     id: "readme",
@@ -162,6 +172,14 @@ export const DESKTOP_ICONS: DesktopIconData[] = [
     defaultWidth: 640,
     defaultHeight: 520,
   },
+  {
+    id: "ie",
+    label: "Internet Explorer",
+    windowTitle: "Internet Explorer",
+    icon: ICON_IE,
+    defaultWidth: 600,
+    defaultHeight: 480,
+  },
 ];
 
 // Grid: 80px wide × 90px tall per cell — must stay aligned with dropIcons() in the store
@@ -175,4 +193,5 @@ export const ICON_POSITIONS: Record<string, IconPosition> = {
   mycomputer:  { top:   0, left: 80 },
   recycle:     { top:  90, left: 80 },
   paint:       { top: 180, left: 80 },
+  ie:          { top: 270, left: 80 },
 };

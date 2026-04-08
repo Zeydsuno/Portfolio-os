@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Project {
   id: string;
@@ -69,6 +69,24 @@ const FONT: React.CSSProperties = { fontFamily: "'Press Start 2P', cursive" };
 export default function ProjectsContent() {
   const [selected, setSelected] = useState<string>(PROJECTS[0].id);
   const project = PROJECTS.find((p) => p.id === selected) ?? PROJECTS[0];
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.focus();
+  }, []);
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    const idx = PROJECTS.findIndex((p) => p.id === selected);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelected(PROJECTS[Math.min(idx + 1, PROJECTS.length - 1)].id);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelected(PROJECTS[Math.max(idx - 1, 0)].id);
+    }
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", ...FONT }}>
@@ -93,13 +111,17 @@ export default function ProjectsContent() {
 
         {/* Left — project list */}
         <div
+          ref={listRef}
           className="sunken-panel"
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
           style={{
             width: 160,
             flexShrink: 0,
             overflowY: "auto",
             margin: "4px 0 4px 4px",
             padding: 0,
+            outline: "none",
           }}
         >
           {PROJECTS.map((p) => (
@@ -186,11 +208,11 @@ export default function ProjectsContent() {
           </div>
 
           {/* Link */}
-          {project.link && (
-            <div>
-              <div style={{ fontSize: "7px", color: "#808080", marginBottom: "4px" }}>
-                REPOSITORY
-              </div>
+          <div>
+            <div style={{ fontSize: "7px", color: "#808080", marginBottom: "4px" }}>
+              REPOSITORY
+            </div>
+            {project.link ? (
               <a
                 href={project.link}
                 target="_blank"
@@ -199,8 +221,12 @@ export default function ProjectsContent() {
               >
                 View on GitHub ↗
               </a>
-            </div>
-          )}
+            ) : (
+              <span style={{ fontSize: "8px", color: "#808080" }}>
+                🔒 Private / Internal
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

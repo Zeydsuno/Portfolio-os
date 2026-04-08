@@ -39,7 +39,10 @@ export default function ReadmeContent() {
         </a>
       </p>
       <p>
-        <strong>LinkedIn:</strong> Attidmese Bunsua
+        <strong>LinkedIn:</strong>{" "}
+        <a href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b" target="_blank" rel="noreferrer">
+          Attidmese Bunsua
+        </a>
       </p>
     </div>
   );
