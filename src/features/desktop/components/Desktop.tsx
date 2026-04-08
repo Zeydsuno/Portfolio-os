@@ -28,6 +28,9 @@ import MyComputerContent from "@/features/portfolio/components/MyComputerContent
 import RecycleBinContent from "@/features/portfolio/components/RecycleBinContent";
 import PaintContent from "@/features/portfolio/components/PaintContent";
 import IEContent from "@/features/portfolio/components/IEContent";
+import CalculatorContent from "@/features/portfolio/components/CalculatorContent";
+import TaskManagerContent from "@/features/portfolio/components/TaskManagerContent";
+import SolitaireGame from "@/features/games/solitaire/SolitaireGame";
 import SnakeGame from "@/features/games/snake/SnakeGame";
 import Minesweeper from "@/features/games/minesweeper/Minesweeper";
 import Screensaver from "./Screensaver";
@@ -47,6 +50,9 @@ const WINDOW_CONTENT: Record<string, ReactNode> = {
   recycle:     <RecycleBinContent />,
   paint:       <PaintContent />,
   ie:          <IEContent />,
+  calculator:  <CalculatorContent />,
+  solitaire:   <SolitaireGame />,
+  taskmanager: <TaskManagerContent />,
 };
 
 interface ContextMenu {

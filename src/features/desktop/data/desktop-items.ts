@@ -104,6 +104,41 @@ const ICON_IE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" wid
   <text x="10.5" y="6" font-size="4" fill="#000" font-family="serif" font-style="italic">e</text>
 </svg>`;
 
+const ICON_CALC = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <rect x="2" y="1" width="12" height="14" rx="1" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
+  <rect x="3" y="2" width="10" height="4" fill="#fff" stroke="#808080" stroke-width="0.5"/>
+  <rect x="3" y="7" width="2" height="2" fill="#808080"/>
+  <rect x="6" y="7" width="2" height="2" fill="#808080"/>
+  <rect x="9" y="7" width="2" height="2" fill="#808080"/>
+  <rect x="12" y="7" width="2" height="2" fill="#cc0000"/>
+  <rect x="3" y="10" width="2" height="2" fill="#808080"/>
+  <rect x="6" y="10" width="2" height="2" fill="#808080"/>
+  <rect x="9" y="10" width="2" height="2" fill="#808080"/>
+  <rect x="12" y="10" width="2" height="2" fill="#808080"/>
+  <rect x="3" y="13" width="5" height="2" fill="#808080"/>
+  <rect x="9" y="13" width="2" height="2" fill="#808080"/>
+  <rect x="12" y="13" width="2" height="2" fill="#000080"/>
+</svg>`;
+
+const ICON_SOLITAIRE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <rect x="1" y="2" width="9" height="12" rx="1" fill="#fff" stroke="#000" stroke-width="1"/>
+  <path d="M5.5 5 C5.5 4 4 4 4 5.5 C4 7 5.5 8.5 5.5 8.5 C5.5 8.5 7 7 7 5.5 C7 4 5.5 4 5.5 5Z" fill="#cc0000"/>
+  <rect x="6" y="4" width="9" height="12" rx="1" fill="#fff" stroke="#000" stroke-width="1"/>
+  <polygon points="10.5,6 9,9 12,9" fill="#000"/>
+  <rect x="10" y="9" width="1" height="1.5" fill="#000"/>
+  <rect x="9" y="10.5" width="3" height="0.5" fill="#000"/>
+</svg>`;
+
+const ICON_TASKMGR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <rect x="1" y="1" width="14" height="14" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
+  <rect x="1" y="1" width="14" height="3" fill="#000080"/>
+  <rect x="2" y="5" width="12" height="1" fill="#808080"/>
+  <rect x="2" y="7" width="8" height="1" fill="#000080"/>
+  <rect x="2" y="9" width="10" height="1" fill="#808080"/>
+  <rect x="2" y="11" width="5" height="1" fill="#000080"/>
+  <rect x="2" y="13" width="9" height="1" fill="#808080"/>
+</svg>`;
+
 export const DESKTOP_ICONS: DesktopIconData[] = [
   {
     id: "readme",
@@ -180,6 +215,30 @@ export const DESKTOP_ICONS: DesktopIconData[] = [
     defaultWidth: 600,
     defaultHeight: 480,
   },
+  {
+    id: "calculator",
+    label: "Calculator",
+    windowTitle: "Calculator",
+    icon: ICON_CALC,
+    defaultWidth: 240,
+    defaultHeight: 280,
+  },
+  {
+    id: "solitaire",
+    label: "Solitaire.exe",
+    windowTitle: "Solitaire",
+    icon: ICON_SOLITAIRE,
+    defaultWidth: 510,
+    defaultHeight: 480,
+  },
+  {
+    id: "taskmanager",
+    label: "Task Manager",
+    windowTitle: "Windows Task Manager",
+    icon: ICON_TASKMGR,
+    defaultWidth: 380,
+    defaultHeight: 320,
+  },
 ];
 
 // Grid: 80px wide × 90px tall per cell — must stay aligned with dropIcons() in the store
@@ -194,4 +253,7 @@ export const ICON_POSITIONS: Record<string, IconPosition> = {
   recycle:     { top:  90, left: 80 },
   paint:       { top: 180, left: 80 },
   ie:          { top: 270, left: 80 },
+  calculator:  { top: 360, left: 80 },
+  solitaire:   { top: 450, left: 80 },
+  taskmanager: { top: 540, left: 80 },
 };
