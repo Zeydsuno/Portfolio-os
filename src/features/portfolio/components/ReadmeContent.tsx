@@ -23,7 +23,7 @@ export default function ReadmeContent() {
         <strong>Languages:</strong> Python, TypeScript, JavaScript, SQL
       </p>
       <p style={{ marginBottom: "4px" }}>
-        <strong>Frameworks:</strong> FastAPI, Flask, Vue.js, Express.js, PyTorch, LangChain
+        <strong>Frameworks:</strong> Next.js, FastAPI, Flask, Vue.js, Express.js, PyTorch, LangChain
       </p>
       <p style={{ marginBottom: "4px" }}>
         <strong>Tools:</strong> Git, Docker, Electron, GitLab CI, Jest, LINE API

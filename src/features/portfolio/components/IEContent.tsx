@@ -7,6 +7,7 @@ const FONT: React.CSSProperties = { fontFamily: "'Press Start 2P', cursive" };
 const PAGES = [
   { url: "https://github.com/Zeydsuno", label: "GitHub" },
   { url: "https://www.linkedin.com/in/attidmese-bunsua-a7952623b", label: "LinkedIn" },
+  { url: "about:portfolio", label: "Portfolio" },
 ];
 
 export default function IEContent() {
@@ -96,8 +97,10 @@ export default function IEContent() {
           </div>
         ) : pageIdx === 0 ? (
           <GithubPage />
-        ) : (
+        ) : pageIdx === 1 ? (
           <LinkedInPage />
+        ) : (
+          <PortfolioPage />
         )}
       </div>
 
@@ -128,16 +131,29 @@ function GithubPage() {
       <hr style={{ marginBottom: "12px" }} />
       <div style={{ fontSize: "11px", fontWeight: "bold", marginBottom: "8px" }}>📦 Repositories</div>
       {[
-        { name: "Portfolio OS", desc: "Win98 interactive portfolio", lang: "TypeScript" },
-        { name: "STOCKNEWS", desc: "Real-time stock news AI scoring", lang: "Python" },
-        { name: "MyFidgeBot", desc: "Smart fridge + LINE Bot", lang: "Python" },
-      ].map((r) => (
-        <div key={r.name} style={{ marginBottom: "8px", padding: "6px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <div style={{ color: "#0000EE", textDecoration: "underline", fontWeight: "bold", cursor: "pointer", fontSize: "11px" }}>{r.name}</div>
-          <div style={{ color: "#666", fontSize: "10px", marginTop: "2px" }}>{r.desc}</div>
-          <div style={{ fontSize: "10px", marginTop: "4px" }}>⬤ {r.lang}</div>
-        </div>
-      ))}
+        { name: "Portfolio OS", desc: "Win98 interactive portfolio", lang: "TypeScript", url: "https://github.com/Zeydsuno/portfolio" },
+        { name: "AI Job Matching", desc: "AI-powered job matching for Thailand market", lang: "Python", url: null },
+        { name: "STOCKNEWS", desc: "Real-time stock news AI scoring via LINE", lang: "Python", url: "https://github.com/Zeydsuno/STOCKNEWS" },
+        { name: "MyFidgeBot", desc: "Smart fridge + LINE Bot", lang: "Python", url: "https://github.com/Zeydsuno/MyFidgeBot" },
+      ].map((r) => {
+        const inner = (
+          <>
+            <div style={{ color: r.url ? "#0000EE" : "#666", textDecoration: r.url ? "underline" : "none", fontWeight: "bold", fontSize: "11px" }}>{r.name}</div>
+            <div style={{ color: "#666", fontSize: "10px", marginTop: "2px" }}>{r.desc}</div>
+            <div style={{ fontSize: "10px", marginTop: "4px" }}>⬤ {r.lang}{!r.url && <span style={{ color: "#999", marginLeft: "8px" }}>🔒 Private</span>}</div>
+          </>
+        );
+        return r.url ? (
+          <a key={r.name} href={r.url} target="_blank" rel="noreferrer"
+            style={{ display: "block", marginBottom: "8px", padding: "6px", border: "1px solid #ddd", borderRadius: "4px", textDecoration: "none" }}>
+            {inner}
+          </a>
+        ) : (
+          <div key={r.name} style={{ display: "block", marginBottom: "8px", padding: "6px", border: "1px solid #ddd", borderRadius: "4px" }}>
+            {inner}
+          </div>
+        );
+      })}
       <div style={{ marginTop: "12px" }}>
         <a
           href="https://github.com/Zeydsuno"
@@ -169,10 +185,17 @@ function LinkedInPage() {
       </div>
       <hr style={{ marginBottom: "12px" }} />
       <div style={{ fontSize: "11px", fontWeight: "bold", marginBottom: "8px" }}>💼 Experience</div>
-      <div style={{ fontSize: "10px", color: "#444", marginBottom: "8px" }}>
-        <div style={{ fontWeight: "bold" }}>EuroScan Warranty ERP</div>
-        <div style={{ color: "#666" }}>QR-based warranty management · Vue.js, Node.js, MySQL, Electron</div>
-      </div>
+      {[
+        { title: "Full-Stack Developer (Freelance)", company: "EuroScan Co., Ltd", period: "Jun – Dec 2025", desc: "QR-based warranty ERP · Vue.js, Node.js, MySQL, Electron" },
+        { title: "AI Engineer (Intern)", company: "iBotNoi Company Limited", period: "Jan – Apr 2025", desc: "AI video/audio summarization platform · PyTorch, LangChain, FastAPI" },
+        { title: "IT Support & LINE Developer", company: "EuroScan Co., Ltd", period: "Jun – Jul 2023", desc: "LINE Chatbot for medical equipment data retrieval" },
+      ].map((exp) => (
+        <div key={exp.title} style={{ fontSize: "10px", color: "#444", marginBottom: "10px", paddingLeft: "8px", borderLeft: "2px solid #0077B5" }}>
+          <div style={{ fontWeight: "bold", color: "#000" }}>{exp.title}</div>
+          <div style={{ color: "#0077B5" }}>{exp.company} · {exp.period}</div>
+          <div style={{ color: "#666", marginTop: "2px" }}>{exp.desc}</div>
+        </div>
+      ))}
       <div style={{ marginTop: "12px" }}>
         <a
           href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b"
@@ -182,6 +205,69 @@ function LinkedInPage() {
         >
           → View full profile on LinkedIn ↗
         </a>
+      </div>
+    </div>
+  );
+}
+
+function PortfolioPage() {
+  const skills = ["Next.js", "TypeScript", "Python", "FastAPI", "Vue.js", "PyTorch", "LangChain", "Docker"];
+  const projects = [
+    { name: "Portfolio OS", desc: "Win98-style interactive portfolio", status: "Live" },
+    { name: "AI Job Matching", desc: "NLP job matching for Thailand market", status: "In Progress" },
+    { name: "Stock News Dashboard", desc: "AI-scored news via LINE Mini App", status: "MVP" },
+    { name: "MyFidgeBot", desc: "Smart fridge + LINE Bot + Thai NLP", status: "MVP" },
+    { name: "EuroScan ERP", desc: "QR warranty management, Electron app", status: "Deployed" },
+  ];
+  const statusColor: Record<string, string> = {
+    Live: "#008000", "In Progress": "#808080", MVP: "#808000", Deployed: "#000080",
+  };
+  return (
+    <div style={{ fontFamily: "sans-serif", fontSize: "12px" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(90deg,#000080,#1084d0)", color: "#fff", padding: "16px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
+        <span style={{ fontSize: "32px" }}>🖥️</span>
+        <div>
+          <div style={{ fontWeight: "bold", fontSize: "16px" }}>Attidmese Bunsua</div>
+          <div style={{ fontSize: "11px", opacity: 0.85 }}>Software Engineer · Full-stack + AI</div>
+        </div>
+      </div>
+
+      {/* About */}
+      <div style={{ marginBottom: "14px", fontSize: "11px", color: "#444", lineHeight: "1.6" }}>
+        Full-stack developer specializing in AI integration, ERP systems, and chatbots. Graduated from Mae Fah Luang University (GPA 3.29). Passionate about building things that work and look great.
+      </div>
+
+      <hr style={{ marginBottom: "12px" }} />
+
+      {/* Skills */}
+      <div style={{ fontSize: "11px", fontWeight: "bold", marginBottom: "8px" }}>🛠 Skills</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
+        {skills.map((s) => (
+          <span key={s} style={{ background: "#e8e8e8", border: "1px solid #ccc", padding: "2px 8px", fontSize: "10px", borderRadius: "2px" }}>{s}</span>
+        ))}
+      </div>
+
+      <hr style={{ marginBottom: "12px" }} />
+
+      {/* Projects */}
+      <div style={{ fontSize: "11px", fontWeight: "bold", marginBottom: "8px" }}>📦 Projects</div>
+      {projects.map((p) => (
+        <div key={p.name} style={{ marginBottom: "8px", padding: "6px 8px", border: "1px solid #ddd", display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: "bold", fontSize: "11px" }}>{p.name}</div>
+            <div style={{ color: "#666", fontSize: "10px", marginTop: "2px" }}>{p.desc}</div>
+          </div>
+          <span style={{ background: statusColor[p.status] ?? "#808080", color: "#fff", fontSize: "9px", padding: "2px 6px", whiteSpace: "nowrap" }}>{p.status}</span>
+        </div>
+      ))}
+
+      <hr style={{ margin: "12px 0" }} />
+
+      {/* Links */}
+      <div style={{ display: "flex", gap: "16px", fontSize: "11px" }}>
+        <a href="https://github.com/Zeydsuno" target="_blank" rel="noreferrer" style={{ color: "#0000EE" }}>🐙 GitHub ↗</a>
+        <a href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b" target="_blank" rel="noreferrer" style={{ color: "#0000EE" }}>💼 LinkedIn ↗</a>
       </div>
     </div>
   );

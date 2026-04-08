@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReadmeContent from "@/features/portfolio/components/ReadmeContent";
 import ProjectsContent from "@/features/portfolio/components/ProjectsContent";
 import MailContent from "@/features/portfolio/components/MailContent";
 import CVContent from "@/features/portfolio/components/CVContent";
+import SnakeGame from "@/features/games/snake/SnakeGame";
+import Minesweeper from "@/features/games/minesweeper/Minesweeper";
 
-type SectionId = "about" | "cv" | "projects" | "contact";
+type SectionId = "about" | "cv" | "projects" | "contact" | "snake" | "minesweeper";
 
 interface Section {
   id: SectionId;
@@ -49,9 +51,49 @@ const SECTIONS: Section[] = [
     title: "Mail.bat",
     content: <MailContent />,
   },
+  {
+    id: "snake",
+    label: "Snake",
+    icon: "🐍",
+    title: "Snake.exe",
+    content: <SnakeGame />,
+  },
+  {
+    id: "minesweeper",
+    label: "Mines",
+    icon: "💣",
+    title: "Minesweeper.exe",
+    content: <Minesweeper />,
+  },
 ];
 
 const FONT: React.CSSProperties = { fontFamily: "'Press Start 2P', cursive" };
+
+function MobileClock() {
+  const [time, setTime] = useState(() =>
+    new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+  );
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTime(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div
+      style={{
+        ...FONT,
+        fontSize: "7px",
+        padding: "2px 6px",
+        border: "1px solid",
+        borderColor: "#808080 #fff #fff #808080",
+        flexShrink: 0,
+      }}
+    >
+      {time}
+    </div>
+  );
+}
 
 export default function MobileLayout() {
   const [active, setActive] = useState<SectionId>("about");
@@ -247,22 +289,7 @@ export default function MobileLayout() {
           ))}
         </div>
 
-        {/* Clock */}
-        <div
-          style={{
-            ...FONT,
-            fontSize: "7px",
-            padding: "2px 6px",
-            border: "1px solid",
-            borderColor: "#808080 #fff #fff #808080",
-            flexShrink: 0,
-          }}
-        >
-          {new Date().toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </div>
+        <MobileClock />
       </div>
     </div>
   );

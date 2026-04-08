@@ -86,7 +86,7 @@ export default function Desktop() {
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const konamiProgress = useRef<number>(0);
-  const IDLE_MS = 120_000;
+  const IDLE_MS = 300_000;
 
   const resetIdle = useCallback(() => {
     if (idleTimer.current) clearTimeout(idleTimer.current);
