@@ -52,6 +52,11 @@ body {
   pointer-events: none;
 }
 
+/* Font scale zoom — controlled via --content-zoom CSS variable */
+.window-body {
+  zoom: var(--content-zoom, 1);
+}
+
 .boot-scroll-bar {
   position: absolute;
   top: 0;

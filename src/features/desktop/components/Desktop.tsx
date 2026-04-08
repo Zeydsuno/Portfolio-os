@@ -18,7 +18,8 @@ import Window from "./Window";
 import Taskbar from "@/features/taskbar/components/Taskbar";
 import BootScreen from "./BootScreen";
 import NotepadWrapper from "./NotepadWrapper";
-import { playStartup } from "../utils/sounds";
+import { playStartup, playWindowOpen, playError } from "../utils/sounds";
+import ErrorDialog from "./ErrorDialog";
 import ReadmeContent from "@/features/portfolio/components/ReadmeContent";
 import ProjectsContent from "@/features/portfolio/components/ProjectsContent";
 import MailContent from "@/features/portfolio/components/MailContent";
@@ -49,13 +50,21 @@ interface ContextMenu {
   y: number;
 }
 
+interface IconContextMenu {
+  x: number;
+  y: number;
+  icon: import("@/types").DesktopIconData;
+}
+
 const TASKBAR_HEIGHT = 32;
 
 export default function Desktop() {
-  const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaperColor } = useDesktopStore();
+  const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaperColor, fontScale } = useDesktopStore();
   const [booted, setBooted] = useState(false);
   const [showScreensaver, setShowScreensaver] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+  const [iconContextMenu, setIconContextMenu] = useState<IconContextMenu | null>(null);
+  const [errorDialog, setErrorDialog] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const IDLE_MS = 120_000;
@@ -75,6 +84,10 @@ export default function Desktop() {
       window.removeEventListener("keydown", resetIdle);
     };
   }, [resetIdle]);
+  useEffect(() => {
+    document.documentElement.style.setProperty("--content-zoom", String(fontScale));
+  }, [fontScale]);
+
   const desktopRef = useRef<HTMLDivElement>(null);
   const suppressNextClick = useRef(false);
   const handleBootComplete = useCallback(() => {
@@ -158,12 +171,18 @@ export default function Desktop() {
   };
 
   const closeContextMenu = () => setContextMenu(null);
+  const closeIconContextMenu = () => setIconContextMenu(null);
+
+  const handleIconContextMenu = (e: React.MouseEvent, icon: import("@/types").DesktopIconData) => {
+    setContextMenu(null);
+    setIconContextMenu({ x: e.clientX, y: e.clientY, icon });
+  };
 
   return (
     <div
       className="relative h-screen w-screen overflow-hidden"
       style={{ backgroundColor: wallpaperColor }}
-      onClick={() => setContextMenu(null)}
+      onClick={() => { setContextMenu(null); setIconContextMenu(null); }}
     >
       {!booted && <BootScreen onComplete={handleBootComplete} />}
 
@@ -179,7 +198,7 @@ export default function Desktop() {
       >
         {/* Desktop Icons */}
         {DESKTOP_ICONS.map((icon) => (
-          <DesktopIcon key={icon.id} icon={icon} />
+          <DesktopIcon key={icon.id} icon={icon} onIconContextMenu={handleIconContextMenu} />
         ))}
 
         {/* Open Windows */}
@@ -279,6 +298,90 @@ export default function Desktop() {
             </div>
           </div>
         )}
+        {/* Icon right-click context menu */}
+        {iconContextMenu && (
+          <div
+            className="window"
+            style={{
+              position: "fixed",
+              top: iconContextMenu.y,
+              left: iconContextMenu.x,
+              width: 160,
+              zIndex: 9999,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="window-body" style={{ padding: 0, margin: 0 }}>
+              {[
+                {
+                  label: "Open",
+                  action: () => {
+                    const { openWindow } = useDesktopStore.getState();
+                    playWindowOpen();
+                    openWindow(iconContextMenu.icon);
+                  },
+                },
+                null,
+                {
+                  label: "Rename",
+                  action: () => {
+                    playError();
+                    setErrorDialog("Cannot rename system file.\n\nAccess is denied.");
+                  },
+                },
+                {
+                  label: "Delete",
+                  action: () => {
+                    playError();
+                    setErrorDialog(`Cannot delete '${iconContextMenu?.icon.label}'.\n\nAccess is denied.`);
+                  },
+                },
+                null,
+                { label: "Properties", disabled: true },
+              ].map((item, i) =>
+                item === null ? (
+                  <div
+                    key={i}
+                    style={{ margin: "2px 4px", borderTop: "1px solid #808080", borderBottom: "1px solid #fff" }}
+                  />
+                ) : (
+                  <button
+                    key={item.label}
+                    disabled={item.disabled}
+                    onClick={() => {
+                      if (item.action) item.action();
+                      closeIconContextMenu();
+                    }}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      padding: "4px 12px",
+                      fontFamily: "'Press Start 2P', cursive",
+                      fontSize: "8px",
+                      textAlign: "left",
+                      border: "none",
+                      background: "transparent",
+                      color: item.disabled ? "#808080" : "#000",
+                      cursor: item.disabled ? "default" : "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!item.disabled) {
+                        e.currentTarget.style.background = "#000080";
+                        e.currentTarget.style.color = "#fff";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = item.disabled ? "#808080" : "#000";
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Screensaver */}
@@ -288,6 +391,11 @@ export default function Desktop() {
 
       {/* Taskbar — fixed at bottom, always on top */}
       <Taskbar />
+
+      {/* Error dialog */}
+      {errorDialog && (
+        <ErrorDialog message={errorDialog} onClose={() => setErrorDialog(null)} />
+      )}
     </div>
   );
 }

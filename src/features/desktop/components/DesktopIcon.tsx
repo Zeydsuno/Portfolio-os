@@ -7,9 +7,10 @@ import type { DesktopIconData, IconPosition } from "@/types";
 
 interface DesktopIconProps {
   icon: DesktopIconData;
+  onIconContextMenu: (e: React.MouseEvent, icon: DesktopIconData) => void;
 }
 
-export default function DesktopIcon({ icon }: DesktopIconProps) {
+export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProps) {
   const {
     openWindow,
     selectIcon,
@@ -103,6 +104,12 @@ export default function DesktopIcon({ icon }: DesktopIconProps) {
       className="absolute flex flex-col items-center gap-1 select-none w-[72px]"
       style={{ top: position.top, left: position.left, cursor: "default" }}
       onMouseDown={handleMouseDown}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectIcon(icon.id);
+        onIconContextMenu(e, icon);
+      }}
     >
       <div
         style={{

@@ -36,6 +36,8 @@ interface DesktopState {
   setWallpaperColor: (color: string) => void;
   recycleBinFull: boolean;
   emptyRecycleBin: () => void;
+  fontScale: number;
+  setFontScale: (scale: number) => void;
 }
 
 export const useDesktopStore = create<DesktopState>((set, get) => ({
@@ -47,6 +49,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   muted: false,
   wallpaperColor: "#008080",
   recycleBinFull: false,
+  fontScale: 1,
 
   openWindow: (icon) => {
     const { windows, nextZIndex, focusWindow } = get();
@@ -266,6 +269,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   toggleMute: () => set((state) => ({ muted: !state.muted })),
   setWallpaperColor: (color) => set({ wallpaperColor: color }),
   emptyRecycleBin: () => set({ recycleBinFull: false }),
+  setFontScale: (scale) => set({ fontScale: scale }),
 
   arrangeIcons: (desktopHeight) => {
     const GRID_W = 80;

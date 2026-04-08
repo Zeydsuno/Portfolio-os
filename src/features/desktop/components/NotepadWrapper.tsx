@@ -16,8 +16,12 @@ const MENU_FONT: React.CSSProperties = {
   fontSize: "9px",
 };
 
+const SCALE_STEPS = [0.75, 0.85, 1, 1.15, 1.3, 1.5];
+
 export default function NotepadWrapper({ children }: NotepadWrapperProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [scaleIdx, setScaleIdx] = useState(2); // default = 1.0
+  const scale = SCALE_STEPS[scaleIdx];
 
   const menus: Record<string, MenuItem[]> = {
     File: [
@@ -156,10 +160,39 @@ export default function NotepadWrapper({ children }: NotepadWrapperProps) {
             )}
           </div>
         ))}
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Separator */}
+        <div style={{ width: 1, background: "#808080", margin: "3px 4px" }} />
+
+        {/* A- / A+ */}
+        <div style={{ display: "flex", alignItems: "center", gap: "3px", padding: "0 4px" }}>
+          <button
+            style={{ ...MENU_FONT, fontSize: "8px", padding: "1px 5px" }}
+            onClick={() => setScaleIdx((i) => Math.max(0, i - 1))}
+            disabled={scaleIdx === 0}
+            title="Decrease font size"
+          >
+            A-
+          </button>
+          <span style={{ ...MENU_FONT, fontSize: "7px", color: "#555", minWidth: "26px", textAlign: "center" }}>
+            {Math.round(scale * 100)}%
+          </span>
+          <button
+            style={{ ...MENU_FONT, fontSize: "8px", padding: "1px 5px" }}
+            onClick={() => setScaleIdx((i) => Math.min(SCALE_STEPS.length - 1, i + 1))}
+            disabled={scaleIdx === SCALE_STEPS.length - 1}
+            title="Increase font size"
+          >
+            A+
+          </button>
+        </div>
       </div>
 
       {/* Content area */}
-      <div style={{ backgroundColor: "#fff" }}>{children}</div>
+      <div style={{ backgroundColor: "#fff", zoom: scale }}>{children}</div>
     </div>
   );
 }

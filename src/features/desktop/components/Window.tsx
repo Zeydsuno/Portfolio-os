@@ -108,7 +108,7 @@ export default function Window({
         className={`window${minimizing ? " win98-minimizing" : ""}`}
         style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}
       >
-        <div className="title-bar" onClick={handleTitleBarClick}>
+        <div className={`title-bar${isActive ? "" : " inactive"}`} onClick={handleTitleBarClick}>
           <div className="title-bar-text">{windowData.title}</div>
           <div className="title-bar-controls">
             <button aria-label="Minimize" onClick={handleMinimize} />

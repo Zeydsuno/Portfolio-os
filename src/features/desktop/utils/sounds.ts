@@ -60,6 +60,15 @@ export function playWindowOpen() {
   tone(ac, 1108, 0.07, 0.12, 0.07, "square");
 }
 
+/** Win98 critical stop / error sound */
+export function playError() {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  tone(ac, 220, 0.00, 0.18, 0.18, "sawtooth");
+  tone(ac, 180, 0.16, 0.22, 0.16, "sawtooth");
+}
+
 export function playWindowClose() {
   if (isMuted()) return;
   const ac = getCtx();

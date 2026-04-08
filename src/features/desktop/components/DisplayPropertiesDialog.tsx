@@ -24,13 +24,33 @@ const WALLPAPER_COLORS: Array<{ label: string; color: string }> = [
   { label: "Deep Space",  color: "#0d0d1a" },
 ];
 
+interface ScaleOption {
+  label: string;
+  value: number;
+}
+
+const SCALE_OPTIONS: ScaleOption[] = [
+  { label: "Small",   value: 0.8  },
+  { label: "Normal",  value: 1.0  },
+  { label: "Large",   value: 1.25 },
+  { label: "X-Large", value: 1.5  },
+];
+
 export default function DisplayPropertiesDialog({ onClose }: DisplayPropertiesDialogProps) {
-  const { wallpaperColor, setWallpaperColor } = useDesktopStore();
+  const { wallpaperColor, setWallpaperColor, fontScale, setFontScale } = useDesktopStore();
   const [selected, setSelected] = useState(wallpaperColor);
+  const [selectedScale, setSelectedScale] = useState(fontScale);
   const [activeTab, setActiveTab] = useState<"background" | "appearance">("background");
 
-  const handleApply = () => setWallpaperColor(selected);
-  const handleOk = () => { setWallpaperColor(selected); onClose(); };
+  const handleApply = () => {
+    setWallpaperColor(selected);
+    setFontScale(selectedScale);
+  };
+  const handleOk = () => {
+    setWallpaperColor(selected);
+    setFontScale(selectedScale);
+    onClose();
+  };
 
   return (
     <div
@@ -154,8 +174,37 @@ export default function DisplayPropertiesDialog({ onClose }: DisplayPropertiesDi
           )}
 
           {activeTab === "appearance" && (
-            <div style={{ ...FONT, fontSize: "8px", padding: "16px", color: "#808080" }}>
-              Appearance settings are managed<br />by Windows 98 system defaults.
+            <div style={{ padding: "12px" }}>
+              <p style={{ ...FONT, fontSize: "8px", marginBottom: "12px" }}>Font Size:</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {SCALE_OPTIONS.map(({ label, value }) => (
+                  <label
+                    key={value}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      cursor: "pointer",
+                      padding: "4px 8px",
+                      background: selectedScale === value ? "#000080" : "transparent",
+                      color: selectedScale === value ? "#fff" : "#000",
+                    }}
+                    onClick={() => setSelectedScale(value)}
+                  >
+                    <input
+                      type="radio"
+                      name="fontScale"
+                      checked={selectedScale === value}
+                      onChange={() => setSelectedScale(value)}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span style={{ ...FONT, fontSize: "8px" }}>{label}</span>
+                    <span style={{ ...FONT, fontSize: "7px", color: selectedScale === value ? "#ccc" : "#808080" }}>
+                      ({Math.round(value * 100)}%)
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
           )}
 
