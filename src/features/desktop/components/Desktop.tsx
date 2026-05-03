@@ -65,6 +65,13 @@ interface IconContextMenu {
   icon: import("@/types").DesktopIconData;
 }
 
+interface MenuItem {
+  label: string;
+  action?: () => void;
+  hasSubmenu?: boolean;
+  disabled?: boolean;
+}
+
 const TASKBAR_HEIGHT = 32;
 
 const KONAMI = [
