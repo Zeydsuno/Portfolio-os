@@ -3,7 +3,7 @@
 
 :root {
   --ui-scale: 1.15;
-  --win98-font: "MS Sans Serif", "Tahoma", "Segoe UI", sans-serif;
+  --win98-font: "Tahoma", "MS Sans Serif", "Segoe UI", sans-serif;
   --pixel-font: "Press Start 2P", cursive;
 }
 

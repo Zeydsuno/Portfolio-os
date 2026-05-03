@@ -1,21 +1,39 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useDesktopStore } from "@/features/desktop/store/desktop-store";
 
-const FONT: React.CSSProperties = { fontFamily: "'Press Start 2P', cursive" };
+const FONT: React.CSSProperties = { fontFamily: "var(--win98-font)" };
 
-type Tab = "applications" | "performance";
-
-interface CpuSample {
-  value: number;
-}
+type Tab = "applications" | "processes" | "performance";
 
 const GRAPH_W = 220;
 const GRAPH_H = 80;
 const MAX_SAMPLES = 44;
 
-function drawGraph(canvas: HTMLCanvasElement, samples: CpuSample[], color: string) {
+const SYSTEM_PROCESSES = [
+  { name: "System Idle Process", pid: 0,   cpu: 0,  mem: 16  },
+  { name: "System",              pid: 8,   cpu: 0,  mem: 212 },
+  { name: "smss.exe",            pid: 148, cpu: 0,  mem: 352 },
+  { name: "csrss.exe",           pid: 196, cpu: 0,  mem: 1820 },
+  { name: "winlogon.exe",        pid: 216, cpu: 0,  mem: 3048 },
+  { name: "services.exe",        pid: 228, cpu: 0,  mem: 2764 },
+  { name: "lsass.exe",           pid: 240, cpu: 0,  mem: 1432 },
+  { name: "svchost.exe",         pid: 412, cpu: 0,  mem: 2980 },
+  { name: "svchost.exe",         pid: 460, cpu: 0,  mem: 1548 },
+  { name: "explorer.exe",        pid: 996, cpu: 1,  mem: 14200 },
+  { name: "taskmgr.exe",         pid: 1044, cpu: 1, mem: 3840 },
+  { name: "msgsrv32.exe",        pid: 1108, cpu: 0, mem: 820 },
+];
+
+const APP_ICONS: Record<string, string> = {
+  readme: "📄", projects: "📁", mail: "📧", cv: "📄",
+  snake: "🐍", minesweeper: "💣", mycomputer: "💻", recycle: "🗑️",
+  paint: "🎨", ie: "🌐", calculator: "🧮", solitaire: "🃏",
+  taskmanager: "🖥️",
+};
+
+function drawGraph(canvas: HTMLCanvasElement, samples: number[], color: string) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.clearRect(0, 0, GRAPH_W, GRAPH_H);
@@ -30,92 +48,161 @@ function drawGraph(canvas: HTMLCanvasElement, samples: CpuSample[], color: strin
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, GRAPH_H); ctx.stroke();
   }
 
-  // Line
   if (samples.length < 2) return;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
+
+  // Fill
   ctx.beginPath();
-  samples.forEach((s, i) => {
+  samples.forEach((v, i) => {
     const x = (i / (MAX_SAMPLES - 1)) * GRAPH_W;
-    const y = GRAPH_H - (s.value / 100) * GRAPH_H;
+    const y = GRAPH_H - (v / 100) * GRAPH_H;
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   });
+  ctx.lineTo(GRAPH_W, GRAPH_H);
+  ctx.lineTo(0, GRAPH_H);
+  ctx.closePath();
+  ctx.fillStyle = color + "55";
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  samples.forEach((v, i) => {
+    const x = (i / (MAX_SAMPLES - 1)) * GRAPH_W;
+    const y = GRAPH_H - (v / 100) * GRAPH_H;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 }
 
-export default function TaskManagerContent() {
-  const { windows, closeWindow } = useDesktopStore();
-  const [tab, setTab] = useState<Tab>("applications");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+function useCpuEstimate() {
+  const [cpu, setCpu] = useState(5);
+  const lastFrameTime = useRef(performance.now());
+  const rafRef = useRef<number>(0);
+  const samplesRef = useRef<number[]>([]);
 
-  const [cpuSamples, setCpuSamples] = useState<CpuSample[]>(() =>
-    Array.from({ length: MAX_SAMPLES }, () => ({ value: Math.random() * 30 + 5 }))
+  useEffect(() => {
+    const measure = (now: number) => {
+      const delta = now - lastFrameTime.current;
+      lastFrameTime.current = now;
+      // 16.7ms = 60fps = 0% load, 100ms+ = heavy load
+      const load = Math.min(100, Math.max(0, ((delta - 16.7) / 83.3) * 100));
+      samplesRef.current.push(load);
+      if (samplesRef.current.length > 5) samplesRef.current.shift();
+      const avg = samplesRef.current.reduce((a, b) => a + b, 0) / samplesRef.current.length;
+      setCpu(Math.round(avg));
+      rafRef.current = requestAnimationFrame(measure);
+    };
+    rafRef.current = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  return cpu;
+}
+
+function useRamInfo() {
+  const [used, setUsed] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [percent, setPercent] = useState(0);
+  const hasMemoryApi = typeof performance !== "undefined" && "memory" in performance;
+
+  useEffect(() => {
+    if (!hasMemoryApi) {
+      // Fallback: simulate stable ~62%
+      const base = 62 + Math.random() * 4;
+      setPercent(Math.round(base));
+      setUsed(Math.round(base * 0.64));
+      setTotal(64);
+      return;
+    }
+    const update = () => {
+      const mem = (performance as unknown as { memory: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+      const usedMB = Math.round(mem.usedJSHeapSize / 1024 / 1024);
+      const totalMB = Math.round(mem.jsHeapSizeLimit / 1024 / 1024);
+      const pct = Math.round((usedMB / totalMB) * 100);
+      setUsed(usedMB);
+      setTotal(totalMB);
+      setPercent(pct);
+    };
+    update();
+    const id = setInterval(update, 2000);
+    return () => clearInterval(id);
+  }, [hasMemoryApi]);
+
+  return { used, total, percent };
+}
+
+export default function TaskManagerContent() {
+  const { windows, closeWindow, focusWindow, restoreWindow } = useDesktopStore();
+  const [tab, setTab] = useState<Tab>("applications");
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [selectedProc, setSelectedProc] = useState<number | null>(null);
+
+  const cpuLoad = useCpuEstimate();
+  const ram = useRamInfo();
+
+  const [cpuHistory, setCpuHistory] = useState<number[]>(() =>
+    Array.from({ length: MAX_SAMPLES }, () => 5)
   );
-  const [ramSamples, setRamSamples] = useState<CpuSample[]>(() =>
-    Array.from({ length: MAX_SAMPLES }, () => ({ value: Math.random() * 20 + 50 }))
+  const [ramHistory, setRamHistory] = useState<number[]>(() =>
+    Array.from({ length: MAX_SAMPLES }, () => 62)
   );
 
   const cpuRef = useRef<HTMLCanvasElement>(null);
   const ramRef = useRef<HTMLCanvasElement>(null);
 
-  // Fake CPU ticker
   useEffect(() => {
     const id = setInterval(() => {
-      setCpuSamples((prev) => {
-        const last = prev[prev.length - 1].value;
-        const next = Math.max(2, Math.min(98, last + (Math.random() - 0.48) * 18));
-        const updated = [...prev.slice(1), { value: next }];
-        return updated;
-      });
-      setRamSamples((prev) => {
-        const last = prev[prev.length - 1].value;
-        const next = Math.max(40, Math.min(90, last + (Math.random() - 0.5) * 4));
-        const updated = [...prev.slice(1), { value: next }];
-        return updated;
-      });
+      setCpuHistory((prev) => [...prev.slice(1), cpuLoad]);
+      setRamHistory((prev) => [...prev.slice(1), ram.percent]);
     }, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [cpuLoad, ram.percent]);
 
   useEffect(() => {
-    if (cpuRef.current) drawGraph(cpuRef.current, cpuSamples, "#00ff00");
-  }, [cpuSamples]);
+    if (cpuRef.current) drawGraph(cpuRef.current, cpuHistory, "#00ff00");
+  }, [cpuHistory]);
 
   useEffect(() => {
-    if (ramRef.current) drawGraph(ramRef.current, ramSamples, "#00ff00");
-  }, [ramSamples]);
+    if (ramRef.current) drawGraph(ramRef.current, ramHistory, "#00ff00");
+  }, [ramHistory]);
 
-  const cpuCur = Math.round(cpuSamples[cpuSamples.length - 1].value);
-  const ramCur = Math.round(ramSamples[ramSamples.length - 1].value);
+  const handleEndTask = useCallback(() => {
+    if (!selectedAppId || selectedAppId === "taskmanager") return;
+    closeWindow(selectedAppId);
+    setSelectedAppId(null);
+  }, [selectedAppId, closeWindow]);
 
-  const handleEndTask = () => {
-    if (selectedId && selectedId !== "taskmanager") {
-      closeWindow(selectedId);
-      setSelectedId(null);
-    }
-  };
+  const handleSwitchTo = useCallback((id: string) => {
+    const win = windows.find((w) => w.id === id);
+    if (!win) return;
+    if (win.minimized) restoreWindow(id);
+    else focusWindow(id);
+  }, [windows, focusWindow, restoreWindow]);
+
+  const visibleWindows = windows.filter((w) => w.id !== "taskmanager");
+  const totalProcesses = visibleWindows.length + SYSTEM_PROCESSES.length;
+
+  const dynamicProcesses = visibleWindows.map((w, i) => ({
+    name: w.title.toLowerCase().replace(/\s+/g, "") + ".exe",
+    pid: 1200 + i * 4,
+    cpu: w.id === selectedAppId ? 2 : 0,
+    mem: 4096 + Math.round(Math.random() * 2048),
+  }));
+
+  const allProcesses = [...SYSTEM_PROCESSES, ...dynamicProcesses];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        background: "#c0c0c0",
-        ...FONT,
-        fontSize: 8,
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#c0c0c0", ...FONT, fontSize: 11 }}>
       {/* Tabs */}
       <div style={{ display: "flex", borderBottom: "1px solid #808080", paddingTop: 4, paddingLeft: 4, gap: 2 }}>
-        {(["applications", "performance"] as Tab[]).map((t) => (
+        {(["applications", "processes", "performance"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             style={{
-              ...FONT,
-              fontSize: 8,
-              padding: "4px 10px",
+              ...FONT, fontSize: 11,
+              padding: "3px 10px",
               background: tab === t ? "#c0c0c0" : "#a0a0a0",
               border: "2px solid",
               borderColor: tab === t ? "#fff #808080 #c0c0c0 #fff" : "#808080 #fff #fff #808080",
@@ -123,212 +210,152 @@ export default function TaskManagerContent() {
               cursor: "pointer",
               textTransform: "capitalize",
             }}
-          >
-            {t}
-          </button>
+          >{t}</button>
         ))}
       </div>
 
-      {/* Tab content */}
+      {/* Content */}
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", padding: 8 }}>
+
+        {/* ── Applications ── */}
         {tab === "applications" && (
           <>
-            {/* Column header */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 80px",
-                background: "#000080",
-                color: "#fff",
-                padding: "3px 6px",
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", background: "#000080", color: "#fff", padding: "3px 6px", fontSize: 11 }}>
               <span>Task</span>
               <span>Status</span>
             </div>
-
-            {/* Window list */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                border: "2px inset",
-                borderColor: "#808080 #fff #fff #808080",
-                background: "#fff",
-              }}
-            >
-              {windows.filter((w) => w.id !== "taskmanager").length === 0 ? (
-                <div style={{ padding: 8, color: "#808080", ...FONT, fontSize: 7 }}>No tasks running</div>
+            <div style={{ flex: 1, overflowY: "auto", border: "2px inset", borderColor: "#808080 #fff #fff #808080", background: "#fff" }}>
+              {visibleWindows.length === 0 ? (
+                <div style={{ padding: 8, color: "#808080" }}>No tasks running</div>
               ) : (
-                windows
-                  .filter((w) => w.id !== "taskmanager")
-                  .map((w) => (
-                    <div
-                      key={w.id}
-                      onClick={() => setSelectedId(w.id)}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 80px",
-                        padding: "4px 6px",
-                        cursor: "default",
-                        background: selectedId === w.id ? "#000080" : "transparent",
-                        color: selectedId === w.id ? "#fff" : "#000",
-                        userSelect: "none",
-                      }}
-                    >
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {w.title}
-                      </span>
-                      <span style={{ color: selectedId === w.id ? "#80ff80" : "#008000" }}>
-                        {w.minimized ? "Minimized" : "Running"}
-                      </span>
-                    </div>
-                  ))
+                visibleWindows.map((w) => (
+                  <div
+                    key={w.id}
+                    onClick={() => setSelectedAppId(w.id)}
+                    onDoubleClick={() => handleSwitchTo(w.id)}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 90px",
+                      padding: "4px 6px",
+                      cursor: "default",
+                      background: selectedAppId === w.id ? "#000080" : "transparent",
+                      color: selectedAppId === w.id ? "#fff" : "#000",
+                      userSelect: "none",
+                    }}
+                  >
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                      <span>{APP_ICONS[w.id] ?? "🪟"}</span>
+                      {w.title}
+                    </span>
+                    <span style={{ color: selectedAppId === w.id ? "#80ff80" : w.minimized ? "#808080" : "#008000" }}>
+                      {w.minimized ? "Minimized" : "Running"}
+                    </span>
+                  </div>
+                ))
               )}
             </div>
-
-            {/* End Task button */}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 6 }}>
+              <button
+                onClick={() => selectedAppId && handleSwitchTo(selectedAppId)}
+                disabled={!selectedAppId}
+                style={{ ...FONT, fontSize: 11, padding: "3px 10px" }}
+              >Switch To</button>
               <button
                 onClick={handleEndTask}
-                disabled={!selectedId}
-                style={{
-                  ...FONT,
-                  fontSize: 8,
-                  padding: "4px 12px",
-                  border: "2px solid",
-                  borderColor: "#fff #808080 #808080 #fff",
-                  background: "#c0c0c0",
-                  cursor: selectedId ? "pointer" : "default",
-                  color: selectedId ? "#000" : "#808080",
-                }}
-              >
-                End Task
-              </button>
+                disabled={!selectedAppId || selectedAppId === "taskmanager"}
+                style={{ ...FONT, fontSize: 11, padding: "3px 10px" }}
+              >End Task</button>
             </div>
           </>
         )}
 
+        {/* ── Processes ── */}
+        {tab === "processes" && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 50px 55px 65px", background: "#000080", color: "#fff", padding: "3px 6px", fontSize: 11 }}>
+              <span>Image Name</span>
+              <span style={{ textAlign: "right" }}>PID</span>
+              <span style={{ textAlign: "right" }}>CPU</span>
+              <span style={{ textAlign: "right" }}>Mem</span>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", border: "2px inset", borderColor: "#808080 #fff #fff #808080", background: "#fff" }}>
+              {allProcesses.map((p, i) => (
+                <div
+                  key={i}
+                  onClick={() => setSelectedProc(p.pid)}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 50px 55px 65px",
+                    padding: "2px 6px",
+                    cursor: "default",
+                    background: selectedProc === p.pid ? "#000080" : i % 2 === 0 ? "#fff" : "#f0f0f0",
+                    color: selectedProc === p.pid ? "#fff" : "#000",
+                    userSelect: "none",
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                  <span style={{ textAlign: "right" }}>{p.pid}</span>
+                  <span style={{ textAlign: "right" }}>{p.name === "System Idle Process" ? 100 - cpuLoad : p.cpu}%</span>
+                  <span style={{ textAlign: "right" }}>{p.mem.toLocaleString()} K</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+              <button
+                disabled={!selectedProc || selectedProc < 1000}
+                onClick={() => {
+                  const proc = dynamicProcesses.find((p) => p.pid === selectedProc);
+                  if (proc) {
+                    const win = visibleWindows.find((w) =>
+                      w.title.toLowerCase().replace(/\s+/g, "") + ".exe" === proc.name
+                    );
+                    if (win) { closeWindow(win.id); setSelectedProc(null); }
+                  }
+                }}
+                style={{ ...FONT, fontSize: 11, padding: "3px 10px" }}
+              >End Process</button>
+            </div>
+          </>
+        )}
+
+        {/* ── Performance ── */}
         {tab === "performance" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 4 }}>
-            {/* CPU */}
-            <div>
-              <div style={{ marginBottom: 4, color: "#000" }}>CPU Usage — {cpuCur}%</div>
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <div
-                  style={{
-                    background: "#000",
-                    border: "2px inset",
-                    borderColor: "#808080 #fff #fff #808080",
-                    padding: 2,
-                  }}
-                >
-                  <canvas ref={cpuRef} width={GRAPH_W} height={GRAPH_H} />
-                </div>
-                <div
-                  style={{
-                    border: "2px inset",
-                    borderColor: "#808080 #fff #fff #808080",
-                    background: "#000",
-                    width: 40,
-                    height: GRAPH_H + 4,
-                    display: "flex",
-                    alignItems: "flex-end",
-                    padding: 2,
-                    boxSizing: "border-box",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100%",
-                      background: "#00ff00",
-                      height: `${cpuCur}%`,
-                      transition: "height 0.8s ease",
-                    }}
-                  />
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 4, overflowY: "auto" }}>
+            {[
+              { label: "CPU Usage", value: cpuLoad, ref: cpuRef },
+              { label: "MEM Usage", value: ram.percent, ref: ramRef },
+            ].map(({ label, value, ref }) => (
+              <div key={label}>
+                <div style={{ marginBottom: 4 }}>{label} — <strong>{value}%</strong></div>
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <div style={{ background: "#000", border: "2px inset", borderColor: "#808080 #fff #fff #808080", padding: 2 }}>
+                    <canvas ref={ref} width={GRAPH_W} height={GRAPH_H} />
+                  </div>
+                  <div style={{ border: "2px inset", borderColor: "#808080 #fff #fff #808080", background: "#000", width: 40, height: GRAPH_H + 4, display: "flex", alignItems: "flex-end", padding: 2, boxSizing: "border-box" }}>
+                    <div style={{ width: "100%", background: "#00ff00", height: `${value}%`, transition: "height 0.8s ease" }} />
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
 
-            {/* RAM */}
-            <div>
-              <div style={{ marginBottom: 4, color: "#000" }}>MEM Usage — {ramCur}%</div>
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                <div
-                  style={{
-                    background: "#000",
-                    border: "2px inset",
-                    borderColor: "#808080 #fff #fff #808080",
-                    padding: 2,
-                  }}
-                >
-                  <canvas ref={ramRef} width={GRAPH_W} height={GRAPH_H} />
-                </div>
-                <div
-                  style={{
-                    border: "2px inset",
-                    borderColor: "#808080 #fff #fff #808080",
-                    background: "#000",
-                    width: 40,
-                    height: GRAPH_H + 4,
-                    display: "flex",
-                    alignItems: "flex-end",
-                    padding: 2,
-                    boxSizing: "border-box",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100%",
-                      background: "#00ff00",
-                      height: `${ramCur}%`,
-                      transition: "height 0.8s ease",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div
-              style={{
-                border: "2px inset",
-                borderColor: "#808080 #fff #fff #808080",
-                background: "#fff",
-                padding: "6px 8px",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "4px 16px",
-                fontSize: 7,
-              }}
-            >
-              <span style={{ color: "#808080" }}>Processes</span>
-              <span>{windows.length + 12}</span>
-              <span style={{ color: "#808080" }}>CPU Usage</span>
-              <span>{cpuCur}%</span>
-              <span style={{ color: "#808080" }}>Mem Usage</span>
-              <span>{ramCur}%</span>
-              <span style={{ color: "#808080" }}>Total RAM</span>
-              <span>64 MB</span>
+            <div style={{ border: "2px inset", borderColor: "#808080 #fff #fff #808080", background: "#fff", padding: "6px 8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 11 }}>
+              <span style={{ color: "#808080" }}>Handles</span><span>{1842 + windows.length * 12}</span>
+              <span style={{ color: "#808080" }}>Threads</span><span>{312 + windows.length * 4}</span>
+              <span style={{ color: "#808080" }}>Processes</span><span>{totalProcesses}</span>
+              <span style={{ color: "#808080" }}>CPU Usage</span><span>{cpuLoad}%</span>
+              <span style={{ color: "#808080" }}>Mem Usage</span><span>{ram.used} MB / {ram.total} MB</span>
+              <span style={{ color: "#808080" }}>Commit</span><span>{Math.round(ram.used * 1.3)} MB</span>
             </div>
           </div>
         )}
       </div>
 
       {/* Status bar */}
-      <div
-        style={{
-          borderTop: "1px solid #808080",
-          padding: "3px 8px",
-          fontSize: 7,
-          color: "#000",
-          display: "flex",
-          gap: 16,
-        }}
-      >
-        <span>Processes: {windows.length + 12}</span>
-        <span>CPU: {cpuCur}%</span>
-        <span>Mem: {ramCur}%</span>
+      <div style={{ borderTop: "1px solid #808080", padding: "3px 8px", fontSize: 11, display: "flex", gap: 16 }}>
+        <span>Processes: {totalProcesses}</span>
+        <span>CPU: {cpuLoad}%</span>
+        <span>Mem: {ram.used > 0 ? `${ram.used} MB` : `${ram.percent}%`}</span>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 const FONT: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', cursive",
-  fontSize: "9px",
+  fontFamily: "var(--win98-font)",
+  fontSize: "11px",
 };
 
 interface InfoRow {

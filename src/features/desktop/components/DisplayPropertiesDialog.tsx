@@ -114,13 +114,15 @@ export default function DisplayPropertiesDialog({ onClose }: DisplayPropertiesDi
   };
 
   const handleCustomUrl = () => {
-    if (!customUrl.trim()) return;
+    const url = customUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) return;
     setSelected({
       id: "custom",
       label: "Custom",
       type: "image",
-      value: customUrl.trim(),
-      thumb: customUrl.trim(),
+      value: url,
+      thumb: url,
     });
   };
 

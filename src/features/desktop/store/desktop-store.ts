@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type {
   DesktopIconData,
   WindowInstance,
@@ -41,7 +42,7 @@ interface DesktopState {
   setFontScale: (scale: number) => void;
 }
 
-export const useDesktopStore = create<DesktopState>((set, get) => ({
+export const useDesktopStore = create<DesktopState>()(persist((set, get) => ({
   windows: [],
   nextZIndex: 1,
   focusedWindowId: null,
@@ -290,4 +291,12 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
     });
     set({ iconPositions: newPositions });
   },
+}), {
+  name: "portfolio-desktop",
+  partialize: (state) => ({
+    muted: state.muted,
+    wallpaper: state.wallpaper,
+    fontScale: state.fontScale,
+    iconPositions: state.iconPositions,
+  }),
 }));

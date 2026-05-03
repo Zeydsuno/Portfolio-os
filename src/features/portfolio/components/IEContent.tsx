@@ -134,7 +134,7 @@ function GithubPage() {
         { name: "Portfolio OS", desc: "Win98 interactive portfolio", lang: "TypeScript", url: "https://github.com/Zeydsuno/portfolio" },
         { name: "AI Job Matching", desc: "AI-powered job matching for Thailand market", lang: "Python", url: null },
         { name: "STOCKNEWS", desc: "Real-time stock news AI scoring via LINE", lang: "Python", url: "https://github.com/Zeydsuno/STOCKNEWS" },
-        { name: "MyFidgeBot", desc: "Smart fridge + LINE Bot", lang: "Python", url: "https://github.com/Zeydsuno/MyFidgeBot" },
+        { name: "Family Business ERP", desc: "ERP for family food business — inventory, finance, kiosk & mobile", lang: "TypeScript", url: null },
       ].map((r) => {
         const inner = (
           <>
@@ -216,7 +216,7 @@ function PortfolioPage() {
     { name: "Portfolio OS", desc: "Win98-style interactive portfolio", status: "Live" },
     { name: "AI Job Matching", desc: "NLP job matching for Thailand market", status: "In Progress" },
     { name: "Stock News Dashboard", desc: "AI-scored news via LINE Mini App", status: "MVP" },
-    { name: "MyFidgeBot", desc: "Smart fridge + LINE Bot + Thai NLP", status: "MVP" },
+    { name: "Family Business ERP", desc: "Production ERP — inventory, finance, kiosk & mobile", status: "Deployed" },
     { name: "EuroScan ERP", desc: "QR warranty management, Electron app", status: "Deployed" },
   ];
   const statusColor: Record<string, string> = {

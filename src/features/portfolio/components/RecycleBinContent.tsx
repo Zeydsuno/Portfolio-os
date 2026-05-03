@@ -3,8 +3,8 @@
 import { useDesktopStore } from "@/features/desktop/store/desktop-store";
 
 const FONT: React.CSSProperties = {
-  fontFamily: "'Press Start 2P', cursive",
-  fontSize: "9px",
+  fontFamily: "var(--win98-font)",
+  fontSize: "11px",
 };
 
 export default function RecycleBinContent() {

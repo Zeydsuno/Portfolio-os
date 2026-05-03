@@ -67,7 +67,7 @@ const SECTIONS: Section[] = [
   },
 ];
 
-const FONT: React.CSSProperties = { fontFamily: "'Press Start 2P', cursive" };
+const FONT: React.CSSProperties = { fontFamily: "var(--win98-font)" };
 
 function MobileClock() {
   const [time, setTime] = useState(() =>
@@ -220,6 +220,8 @@ export default function MobileLayout() {
               overflow: "auto",
               padding: "4px",
               minHeight: 0,
+              fontFamily: "Tahoma, sans-serif",
+              fontSize: "12px",
             }}
           >
             {section.content}

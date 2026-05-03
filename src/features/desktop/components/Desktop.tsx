@@ -38,21 +38,20 @@ import BSODScreen from "./BSODScreen";
 import DisplayPropertiesDialog from "./DisplayPropertiesDialog";
 import type { ReactNode } from "react";
 
-/** Maps window IDs to their content components */
-const WINDOW_CONTENT: Record<string, ReactNode> = {
-  readme:      <NotepadWrapper><ReadmeContent /></NotepadWrapper>,
-  projects:    <ProjectsContent />,
-  mail:        <MailContent />,
-  cv:          <NotepadWrapper><CVContent /></NotepadWrapper>,
-  snake:       <SnakeGame />,
-  minesweeper: <Minesweeper />,
-  mycomputer:  <MyComputerContent />,
-  recycle:     <RecycleBinContent />,
-  paint:       <PaintContent />,
-  ie:          <IEContent />,
-  calculator:  <CalculatorContent />,
-  solitaire:   <SolitaireGame />,
-  taskmanager: <TaskManagerContent />,
+const WINDOW_CONTENT: Record<string, () => ReactNode> = {
+  readme:      () => <NotepadWrapper><ReadmeContent /></NotepadWrapper>,
+  projects:    () => <ProjectsContent />,
+  mail:        () => <MailContent />,
+  cv:          () => <NotepadWrapper><CVContent /></NotepadWrapper>,
+  snake:       () => <SnakeGame />,
+  minesweeper: () => <Minesweeper />,
+  mycomputer:  () => <MyComputerContent />,
+  recycle:     () => <RecycleBinContent />,
+  paint:       () => <PaintContent />,
+  ie:          () => <IEContent />,
+  calculator:  () => <CalculatorContent />,
+  solitaire:   () => <SolitaireGame />,
+  taskmanager: () => <TaskManagerContent />,
 };
 
 interface ContextMenu {
@@ -95,11 +94,17 @@ export default function Desktop() {
 
   useEffect(() => {
     resetIdle();
-    window.addEventListener("mousemove", resetIdle);
+    let rafPending = false;
+    const onMouseMove = () => {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => { resetIdle(); rafPending = false; });
+    };
+    window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("keydown", resetIdle);
     return () => {
       if (idleTimer.current) clearTimeout(idleTimer.current);
-      window.removeEventListener("mousemove", resetIdle);
+      window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("keydown", resetIdle);
     };
   }, [resetIdle]);
@@ -252,7 +257,7 @@ export default function Desktop() {
             desktopWidth={desktopWidth}
             desktopHeight={desktopHeight}
           >
-            {WINDOW_CONTENT[w.id]}
+            {WINDOW_CONTENT[w.id]?.()}
           </Window>
         ))}
 
