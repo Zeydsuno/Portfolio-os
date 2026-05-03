@@ -8,63 +8,40 @@ const MAX_LENGTHS = {
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const rateLimitMap = new Map<string, RateLimitEntry>();
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX) return false;
-
-  entry.count++;
-  return true;
-}
+const BODY_SIZE_LIMIT = 10_000;
 
 interface ContactBody {
   name: string;
   email: string;
   subject: string;
   message: string;
+  website?: string;
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limiting
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-  if (!checkRateLimit(ip)) {
-    return Response.json(
-      { error: "Too many requests. Please try again later." },
-      { status: 429 }
-    );
+  const origin = req.headers.get("origin") ?? "";
+  const host = req.headers.get("host") ?? "";
+  if (!origin || !host || !origin.includes(host)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Body size check
-  const contentLength = req.headers.get("content-length");
-  if (contentLength && parseInt(contentLength, 10) > 10_000) {
+  const buf = await req.arrayBuffer();
+  if (buf.byteLength > BODY_SIZE_LIMIT) {
     return Response.json({ error: "Request too large" }, { status: 413 });
   }
 
   let body: ContactBody;
   try {
-    body = (await req.json()) as ContactBody;
+    body = JSON.parse(new TextDecoder().decode(buf)) as ContactBody;
   } catch {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, email, subject, message } = body;
+  const { name, email, subject, message, website } = body;
+
+  if (website) {
+    return Response.json({ ok: true });
+  }
 
   if (!name || !email || !message) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
@@ -128,7 +105,7 @@ export async function POST(req: NextRequest) {
       to: contactEmail,
       reply_to: email,
       subject: subject || `[Portfolio] Message from ${name}`,
-      text: `From: ${name} <${email}>\n\n${message}`,
+      text: `From: ${name}\nReply-To (unverified): ${email}\n\n${message}\n\n---\n⚠ This email address was self-reported and has not been verified.`,
     }),
   });
 

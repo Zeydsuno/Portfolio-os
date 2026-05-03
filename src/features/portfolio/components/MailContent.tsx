@@ -10,6 +10,7 @@ export default function MailContent() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [status, setStatus] = useState<SendStatus>("idle");
+  const [honeypot, setHoneypot] = useState("");
 
   async function handleSend() {
     if (!name.trim() || !email.trim() || !body.trim()) return;
@@ -18,7 +19,7 @@ export default function MailContent() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, subject, message: body }),
+        body: JSON.stringify({ name, email, subject, message: body, website: honeypot }),
       });
       setStatus(res.ok ? "sent" : "error");
     } catch {
@@ -48,6 +49,16 @@ export default function MailContent() {
       <p style={{ marginBottom: "12px" }}>
         <strong>Send me a message!</strong>
       </p>
+      <input
+        type="text"
+        name="website"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", opacity: 0, height: 0 }}
+      />
       <div className="field-row-stacked" style={{ marginBottom: "8px" }}>
         <label htmlFor="mail-to">To:</label>
         <input id="mail-to" type="text" defaultValue="Attidmese B. (Portfolio)" readOnly />
