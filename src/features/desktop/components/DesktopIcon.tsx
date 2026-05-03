@@ -25,9 +25,11 @@ export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProp
   const isSelected = selectedIcons.includes(icon.id);
   const lastClickTime = useRef(0);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
     e.stopPropagation();
+    const el = e.currentTarget as HTMLElement;
+    el.setPointerCapture(e.pointerId);
 
     const wasSelected = selectedIcons.includes(icon.id);
 
@@ -46,6 +48,9 @@ export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProp
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
     let hasDragged = false;
+    let rafId: number | null = null;
+    let lastMx = e.clientX;
+    let lastMy = e.clientY;
 
     // Measure desktop bounds once at drag start
     const desktopEl = document.getElementById("desktop-area");
@@ -56,54 +61,78 @@ export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProp
       Math.min(Math.max(val, min), max);
 
     const onMove = (moveE: MouseEvent) => {
-      const dx = moveE.clientX - startMouseX;
-      const dy = moveE.clientY - startMouseY;
+      lastMx = moveE.clientX;
+      lastMy = moveE.clientY;
 
-      if (!hasDragged && Math.abs(dx) + Math.abs(dy) > 4) {
-        hasDragged = true;
-      }
+      const dx = lastMx - startMouseX;
+      const dy = lastMy - startMouseY;
+      if (!hasDragged && Math.abs(dx) + Math.abs(dy) > 4) hasDragged = true;
+      if (!hasDragged || rafId !== null) return;
 
-      if (hasDragged) {
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const fdx = lastMx - startMouseX;
+        const fdy = lastMy - startMouseY;
         const updates: Record<string, IconPosition> = {};
         dragIds.forEach((id) => {
           updates[id] = {
-            top: clamp(startPositions[id].top + dy, 0, maxTop),
-            left: clamp(startPositions[id].left + dx, 0, maxLeft),
+            top: clamp(startPositions[id].top + fdy, 0, maxTop),
+            left: clamp(startPositions[id].left + fdx, 0, maxLeft),
           };
         });
         moveMultipleIcons(updates);
-      }
+      });
     };
 
-    const onUp = () => {
+    const onUp = (upE: PointerEvent) => {
+      el.releasePointerCapture(upE.pointerId);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("mousemove", onMove);
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
       if (hasDragged) {
+        const fdx = lastMx - startMouseX;
+        const fdy = lastMy - startMouseY;
+        const final: Record<string, IconPosition> = {};
+        dragIds.forEach((id) => {
+          final[id] = {
+            top: clamp(startPositions[id].top + fdy, 0, maxTop),
+            left: clamp(startPositions[id].left + fdx, 0, maxLeft),
+          };
+        });
+        moveMultipleIcons(final);
         dropIcons(dragIds, maxTop, maxLeft);
       } else {
         const now = Date.now();
         if (now - lastClickTime.current < 400) {
-          // Double-click → open
           playWindowOpen();
           openWindow(icon);
           selectIcon(null);
         } else if (wasSelected && selectedIcons.length > 1) {
-          // Single click on multi-selected icon → narrow to just this one
           selectIcon(icon.id);
         }
         lastClickTime.current = now;
       }
+    };
+
+    const onCancel = () => {
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", onCancel);
       window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+      if (hasDragged) dropIcons(dragIds, maxTop, maxLeft);
     };
 
     window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onCancel);
   };
 
   return (
     <div
       className="absolute flex flex-col items-center gap-1 select-none w-[72px]"
       style={{ top: position.top, left: position.left, cursor: "default" }}
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -122,6 +151,7 @@ export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProp
           width={48}
           height={48}
           alt={icon.label}
+          draggable="false"
           style={{
             imageRendering: "pixelated",
             filter: isSelected
