@@ -122,8 +122,17 @@ export default function Minesweeper() {
   const [board, setBoard] = useState(createBoard);
   const [gameStatus, setGameStatus] = useState<GameStatus>("playing");
   const [timer, setTimer] = useState(0);
+  const [flagMode, setFlagMode] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const startedRef = useRef(false);
+
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth < 600);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const flagCount = board.flat().filter((c) => c.flagged).length;
 
@@ -154,14 +163,24 @@ export default function Minesweeper() {
     setBoard(createBoard());
     setGameStatus("playing");
     setTimer(0);
+    setFlagMode(false);
   }, []);
 
   const handleClick = useCallback(
     (r: number, c: number) => {
       if (gameStatus !== "playing") return;
       const cell = board[r][c];
-      if (cell.revealed || cell.flagged) return;
 
+      if (flagMode) {
+        if (cell.revealed) return;
+        startTimer();
+        const newBoard = cloneBoard(board);
+        newBoard[r][c].flagged = !newBoard[r][c].flagged;
+        setBoard(newBoard);
+        return;
+      }
+
+      if (cell.revealed || cell.flagged) return;
       startTimer();
 
       if (cell.isMine) {
@@ -176,7 +195,7 @@ export default function Minesweeper() {
         setGameStatus("won");
       }
     },
-    [board, gameStatus, startTimer]
+    [board, gameStatus, flagMode, startTimer]
   );
 
   const handleRightClick = useCallback(
@@ -245,6 +264,34 @@ export default function Minesweeper() {
           {String(Math.min(timer, 999)).padStart(3, "0")}
         </span>
       </div>
+
+      {/* Mode toggle — mobile only */}
+      {isNarrow && <div style={{ display: "flex", gap: "4px" }}>
+        <button
+          onClick={() => setFlagMode(false)}
+          style={{
+            flex: 1,
+            padding: "4px",
+            fontSize: "10px",
+            fontFamily: "Tahoma, sans-serif",
+            cursor: "pointer",
+            boxShadow: !flagMode ? "inset 1px 1px 0 #808080, inset -1px -1px 0 #fff" : undefined,
+            fontWeight: !flagMode ? "bold" : "normal",
+          }}
+        >⬜ Dig</button>
+        <button
+          onClick={() => setFlagMode(true)}
+          style={{
+            flex: 1,
+            padding: "4px",
+            fontSize: "10px",
+            fontFamily: "Tahoma, sans-serif",
+            cursor: "pointer",
+            boxShadow: flagMode ? "inset 1px 1px 0 #808080, inset -1px -1px 0 #fff" : undefined,
+            fontWeight: flagMode ? "bold" : "normal",
+          }}
+        >🚩 Flag</button>
+      </div>}
 
       {/* Grid */}
       <div
