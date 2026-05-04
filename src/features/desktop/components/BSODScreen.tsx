@@ -77,7 +77,7 @@ export default function BSODScreen({ onDismiss }: BSODScreenProps) {
             paddingTop: "12px",
           }}
         >
-          ─── Windows 98 ─── Error Code: MS-DOS_MODE_TRIGGERED ─── Build 1998 ───
+          ─── Zeyd-OS ─── Error Code: MS-DOS_MODE_TRIGGERED ─── Build 1998 ───
         </p>
       </div>
     </div>

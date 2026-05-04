@@ -11,7 +11,7 @@ interface InfoRow {
 }
 
 const SYSTEM_INFO: InfoRow[] = [
-  { label: "OS",           value: "Microsoft Windows 98 SE" },
+  { label: "OS",           value: "Zeyd-OS 98 SE" },
   { label: "Version",      value: "4.10.2222 A" },
   { label: "Computer",     value: "ATTIDMESE-PC" },
   { label: "Processor",    value: "Intel Pentium III 500MHz" },

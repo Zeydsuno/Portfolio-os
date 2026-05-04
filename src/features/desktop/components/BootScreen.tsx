@@ -45,29 +45,17 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
         transition: "opacity 0.7s ease",
       }}
     >
-      {/* Win98 logo */}
+      {/* OS logo */}
       <div style={{ textAlign: "center", marginBottom: "56px" }}>
         <div
           style={{
             ...TEXT_STYLE,
-            fontSize: "9px",
-            color: "#c0c0c0",
-            letterSpacing: "4px",
-            marginBottom: "10px",
-          }}
-        >
-          Microsoft
-        </div>
-        <div
-          style={{
-            ...TEXT_STYLE,
-            fontSize: "26px",
-            color: "#fff",
+            fontSize: "32px",
             letterSpacing: "2px",
             lineHeight: 1.2,
           }}
         >
-          Windows{" "}
+          <span style={{ color: "#fff" }}>Zeyd</span>
           <span
             style={{
               background: "linear-gradient(135deg, #ff6600 0%, #ffcc00 50%, #ff6600 100%)",
@@ -76,7 +64,7 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
               backgroundClip: "text",
             }}
           >
-            98
+            OS
           </span>
         </div>
         <div
@@ -84,8 +72,8 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
             ...TEXT_STYLE,
             fontSize: "7px",
             color: "#808080",
-            letterSpacing: "3px",
-            marginTop: "8px",
+            letterSpacing: "5px",
+            marginTop: "10px",
           }}
         >
           Second Edition
@@ -116,7 +104,7 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
           letterSpacing: "1px",
         }}
       >
-        Copyright © 1981-1999 Microsoft Corp.
+        © 2025 Zeyd-OS
       </div>
     </div>
   );

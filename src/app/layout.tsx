@@ -4,17 +4,17 @@ import "98.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Portfolio — Windows 98",
-  description: "Interactive portfolio with a Windows 98 desktop experience",
+  title: "Zeyd-OS",
+  description: "Interactive Windows 98-style OS portfolio by Attidmese Bunsua",
   openGraph: {
-    title: "Portfolio — Windows 98",
-    description: "Interactive portfolio with a Windows 98 desktop experience",
+    title: "Zeyd-OS",
+    description: "Interactive Windows 98-style OS portfolio by Attidmese Bunsua",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Portfolio — Windows 98",
-    description: "Interactive portfolio with a Windows 98 desktop experience",
+    title: "Zeyd-OS",
+    description: "Interactive Windows 98-style OS portfolio by Attidmese Bunsua",
   },
 };
 

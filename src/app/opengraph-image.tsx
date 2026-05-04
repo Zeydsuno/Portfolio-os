@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Portfolio — Windows 98";
+export const alt = "Zeyd-OS";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -160,7 +160,7 @@ export default function Image() {
               ))}
             </div>
             <div style={{ fontSize: "16px", color: "#666", marginTop: "4px" }}>
-              🖥️  Interactive Windows 98 Portfolio — Double-click to explore
+              🖥️  Zeyd-OS — Double-click to explore
             </div>
           </div>
         </div>

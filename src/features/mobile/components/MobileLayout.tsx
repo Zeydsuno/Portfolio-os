@@ -139,7 +139,7 @@ export default function MobileLayout() {
       >
         <span style={{ fontSize: "16px" }}>🖥️</span>
         <span style={{ color: "#fff", fontSize: "9px" }}>
-          Attidmese Bunsua — Portfolio
+          Attidmese Bunsua — Zeyd-OS
         </span>
       </div>
 

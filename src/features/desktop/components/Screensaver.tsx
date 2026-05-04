@@ -60,7 +60,7 @@ export default function Screensaver({ onDismiss }: ScreensaverProps) {
 
         ctx.font = "bold 16px 'Press Start 2P', monospace";
         ctx.fillStyle = p.color;
-        ctx.fillText("⊞ Windows 98", p.x, p.y);
+        ctx.fillText("Zeyd-OS", p.x, p.y);
       }
 
       animId = requestAnimationFrame(draw);
