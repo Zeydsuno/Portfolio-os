@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 
 interface Screenshot {
@@ -94,6 +95,7 @@ export default function ProjectsContent() {
   const [selected, setSelected] = useState<string>(PROJECTS[0].id);
   const [activeShot, setActiveShot] = useState<number>(0);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const project = PROJECTS.find((p) => p.id === selected) ?? PROJECTS[0];
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -109,6 +111,18 @@ export default function ProjectsContent() {
     if (!el) return;
     el.focus();
   }, []);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const shots = project.screenshots ?? [];
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+      else if (e.key === "ArrowRight") setActiveShot((i) => Math.min(i + 1, shots.length - 1));
+      else if (e.key === "ArrowLeft") setActiveShot((i) => Math.max(i - 1, 0));
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [lightboxOpen, project.screenshots]);
 
   function handleKeyDown(e: React.KeyboardEvent) {
     const idx = PROJECTS.findIndex((p) => p.id === selected);
@@ -295,7 +309,9 @@ export default function ProjectsContent() {
                     overflow: "hidden",
                     background: "#000",
                     marginBottom: "4px",
+                    cursor: "zoom-in",
                   }}
+                  onClick={() => setLightboxOpen(true)}
                 >
                   <Image
                     src={current.src}
@@ -308,7 +324,7 @@ export default function ProjectsContent() {
                   {/* Prev / Next arrows */}
                   {activeShot > 0 && (
                     <button
-                      onClick={() => setActiveShot((i) => i - 1)}
+                      onClick={(e) => { e.stopPropagation(); setActiveShot((i) => i - 1); }}
                       style={{
                         position: "absolute", left: 4, top: "50%",
                         transform: "translateY(-50%)",
@@ -320,7 +336,7 @@ export default function ProjectsContent() {
                   )}
                   {activeShot < shots.length - 1 && (
                     <button
-                      onClick={() => setActiveShot((i) => i + 1)}
+                      onClick={(e) => { e.stopPropagation(); setActiveShot((i) => i + 1); }}
                       style={{
                         position: "absolute", right: 4, top: "50%",
                         transform: "translateY(-50%)",
@@ -384,6 +400,75 @@ export default function ProjectsContent() {
         </div>
         <div className="status-bar-field">{project.status}</div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxOpen && project.screenshots && createPortal(
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.88)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div
+            className="window"
+            style={{ maxWidth: "90vw", display: "flex", flexDirection: "column" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="title-bar">
+              <div className="title-bar-text" style={{ fontSize: "9px" }}>
+                🖼️ {project.screenshots[activeShot].caption} ({activeShot + 1}/{project.screenshots.length})
+              </div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={() => setLightboxOpen(false)} />
+              </div>
+            </div>
+            <div
+              className="window-body"
+              style={{ padding: "4px", display: "flex", flexDirection: "column", gap: "4px", ...FONT }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: "min(85vw, 1100px)",
+                  height: "min(75vh, 700px)",
+                  background: "#000",
+                }}
+              >
+                <Image
+                  src={project.screenshots[activeShot].src}
+                  alt={project.screenshots[activeShot].caption}
+                  fill
+                  style={{ objectFit: "contain" }}
+                  sizes="90vw"
+                  quality={100}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                <button
+                  style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
+                  onClick={() => setActiveShot((i) => Math.max(i - 1, 0))}
+                  disabled={activeShot === 0}
+                >◀ Prev</button>
+                <span style={{ fontSize: "8px", color: "#808080" }}>
+                  {project.screenshots[activeShot].caption}
+                </span>
+                <button
+                  style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
+                  onClick={() => setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1))}
+                  disabled={activeShot === project.screenshots.length - 1}
+                >Next ▶</button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
