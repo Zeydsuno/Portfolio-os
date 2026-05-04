@@ -264,27 +264,37 @@ export default function MobileLayout() {
           }}
         />
 
-        {/* Section buttons */}
-        <div style={{ display: "flex", gap: "2px", flex: 1, overflowX: "auto" }}>
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setActive(s.id)}
-              style={{
-                ...FONT,
-                fontSize: "7px",
-                padding: "2px 6px",
-                whiteSpace: "nowrap",
-                fontWeight: active === s.id ? "bold" : "normal",
-                boxShadow:
-                  active === s.id
-                    ? "inset 1px 1px 0 #808080, inset -1px -1px 0 #fff"
-                    : undefined,
-              }}
-            >
-              {s.icon} {s.label}
-            </button>
-          ))}
+        {/* Section buttons — scroll hint via gradient, iOS Safari doesn't support ::-webkit-scrollbar */}
+        <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+          <div className="taskbar-nav" style={{ display: "flex", gap: "2px", overflowX: "auto" }}>
+            {SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setActive(s.id)}
+                style={{
+                  ...FONT,
+                  fontSize: "7px",
+                  padding: "2px 6px",
+                  whiteSpace: "nowrap",
+                  fontWeight: active === s.id ? "bold" : "normal",
+                  boxShadow:
+                    active === s.id
+                      ? "inset 1px 1px 0 #808080, inset -1px -1px 0 #fff"
+                      : undefined,
+                }}
+              >
+                {s.icon} {s.label}
+              </button>
+            ))}
+          </div>
+          <div
+            aria-hidden
+            style={{
+              position: "absolute", right: 0, top: 0, bottom: 0, width: 20,
+              background: "linear-gradient(to right, transparent, #c0c0c0)",
+              pointerEvents: "none",
+            }}
+          />
         </div>
 
         <MobileClock />

@@ -7,7 +7,7 @@ const GRID_W = 20;
 const GRID_H = 20;
 const CANVAS_W = GRID_W * CELL_SIZE;
 const CANVAS_H = GRID_H * CELL_SIZE;
-const TICK_MS = 120;
+const TICK_MS = 180;
 
 interface Point {
   x: number;
@@ -32,6 +32,7 @@ function spawnFood(snake: Point[]): Point {
 export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
   const [status, setStatus] = useState<GameStatus>("waiting");
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -41,6 +42,7 @@ export default function SnakeGame() {
   const nextDirRef = useRef<Direction>("RIGHT");
   const foodRef = useRef<Point>({ x: 15, y: 10 });
   const scoreRef = useRef(0);
+  const highScoreRef = useRef(0);
   const statusRef = useRef<GameStatus>("waiting");
   const loopRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -102,6 +104,15 @@ export default function SnakeGame() {
     setStatus("playing");
   }, []);
 
+  const triggerGameOver = useCallback(() => {
+    if (scoreRef.current > highScoreRef.current) {
+      highScoreRef.current = scoreRef.current;
+      setHighScore(highScoreRef.current);
+    }
+    statusRef.current = "gameover";
+    setStatus("gameover");
+  }, []);
+
   const tick = useCallback(() => {
     if (statusRef.current !== "playing") return;
 
@@ -122,15 +133,13 @@ export default function SnakeGame() {
       newHead.y < 0 ||
       newHead.y >= GRID_H
     ) {
-      statusRef.current = "gameover";
-      setStatus("gameover");
+      triggerGameOver();
       return;
     }
 
     // Self collision
     if (snake.some((s) => s.x === newHead.x && s.y === newHead.y)) {
-      statusRef.current = "gameover";
-      setStatus("gameover");
+      triggerGameOver();
       return;
     }
 
@@ -150,7 +159,7 @@ export default function SnakeGame() {
 
     snakeRef.current = newSnake;
     draw();
-  }, [draw]);
+  }, [draw, triggerGameOver]);
 
   const startGame = useCallback(() => {
     if (loopRef.current) clearInterval(loopRef.current);
@@ -158,6 +167,13 @@ export default function SnakeGame() {
     draw();
     loopRef.current = setInterval(tick, TICK_MS);
   }, [reset, draw, tick]);
+
+  const quitToMenu = useCallback(() => {
+    if (loopRef.current) clearInterval(loopRef.current);
+    statusRef.current = "waiting";
+    setStatus("waiting");
+    draw();
+  }, [draw]);
 
   // Keyboard handler
   useEffect(() => {
@@ -229,10 +245,11 @@ export default function SnakeGame() {
   }
 
   function handleDPad(d: Direction) {
-    if (statusRef.current === "waiting" || statusRef.current === "gameover") {
+    if (statusRef.current === "waiting") {
       startGame();
       return;
     }
+    if (statusRef.current === "gameover") return;
     const cur = dirRef.current;
     if (d === "UP" && cur !== "DOWN") nextDirRef.current = "UP";
     else if (d === "DOWN" && cur !== "UP") nextDirRef.current = "DOWN";
@@ -241,9 +258,9 @@ export default function SnakeGame() {
   }
 
   const btnStyle: React.CSSProperties = {
-    width: 44,
-    height: 44,
-    fontSize: "16px",
+    width: 64,
+    height: 64,
+    fontSize: "22px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -265,14 +282,63 @@ export default function SnakeGame() {
       <div className="status-bar" style={{ width: "100%", maxWidth: CANVAS_W }}>
         <p className="status-bar-field">Score: {score}</p>
         <p className="status-bar-field">
-          {status === "waiting" && "Tap or press Enter"}
-          {status === "playing" && "Swipe or arrow keys"}
-          {status === "gameover" && "Game Over! Tap to retry"}
+          {status === "waiting" && (
+            <><span className="md:hidden">Tap to start</span><span className="hidden md:inline">Press Enter to start</span></>
+          )}
+          {status === "playing" && (
+            <><span className="md:hidden">Swipe to steer</span><span className="hidden md:inline">Arrow keys to steer</span></>
+          )}
+          {status === "gameover" && (
+            <><span className="md:hidden">Tap to retry</span><span className="hidden md:inline">Press Enter to retry</span></>
+          )}
         </p>
       </div>
 
-      {/* On-screen D-pad for mobile */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 44px)", gap: "2px", marginTop: "8px" }}>
+      {/* You Lose popup — Win98 dialog style */}
+      {status === "gameover" && (
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.45)", zIndex: 50,
+            pointerEvents: "all",
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          <div className="window" style={{ minWidth: 280, maxWidth: 340 }}>
+            <div className="title-bar">
+              <div className="title-bar-text">Snake — Game Over</div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onPointerDown={quitToMenu} />
+              </div>
+            </div>
+            <div className="window-body" style={{ padding: "16px 20px" }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
+                <span style={{ fontSize: 36, lineHeight: 1, flexShrink: 0 }}>😵</span>
+                <div>
+                  <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>You lose!</p>
+                  <p style={{ margin: "0 0 2px" }}>
+                    Score: <strong>{score}</strong>
+                  </p>
+                  <p style={{ margin: 0, color: highScore > 0 && score >= highScore ? "green" : undefined }}>
+                    Best: <strong>{highScore}</strong>
+                    {highScore > 0 && score >= highScore && " 🏆"}
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button onPointerDown={quitToMenu} style={{ minWidth: 88 }}>
+                  Play Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* On-screen D-pad — mobile only */}
+      <div className="grid md:hidden" style={{ gridTemplateColumns: "repeat(3, 64px)", gap: "8px", marginTop: "12px" }}>
         <div />
         <button style={btnStyle} onPointerDown={() => handleDPad("UP")}>▲</button>
         <div />

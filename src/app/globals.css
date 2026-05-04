@@ -86,3 +86,19 @@ body {
   );
   animation: bootScroll 1.1s linear infinite;
 }
+
+/* Taskbar nav — force visible scrollbar on mobile */
+.taskbar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: #808080 #c0c0c0;
+}
+.taskbar-nav::-webkit-scrollbar {
+  height: 4px;
+}
+.taskbar-nav::-webkit-scrollbar-track {
+  background: #c0c0c0;
+}
+.taskbar-nav::-webkit-scrollbar-thumb {
+  background: #808080;
+  border: 1px solid #fff;
+}
