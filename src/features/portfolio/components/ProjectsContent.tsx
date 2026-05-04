@@ -464,6 +464,13 @@ export default function ProjectsContent() {
                   disabled={activeShot === project.screenshots.length - 1}
                 >Next ▶</button>
               </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", paddingTop: "2px" }}>
+                <button
+                  style={{ ...FONT, fontSize: "10px", padding: "4px 24px", cursor: "pointer" }}
+                  onClick={() => setLightboxOpen(false)}
+                >✕ Close</button>
+                <span style={{ fontSize: "7px", color: "#808080" }}>or tap outside to close</span>
+              </div>
             </div>
           </div>
         </div>,
