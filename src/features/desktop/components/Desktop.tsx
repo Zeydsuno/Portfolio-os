@@ -299,14 +299,14 @@ export default function Desktop() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="window-body" style={{ padding: 0, margin: 0 }}>
-              {[
+              {([
                 { label: "Arrange Icons", action: () => arrangeIcons(desktopHeight) },
                 { label: "Refresh", action: () => window.location.reload() },
                 null,
                 { label: "New", hasSubmenu: true },
                 null,
                 { label: "Properties", action: () => setShowDisplayProps(true) },
-              ].map((item, i) =>
+              ] as (MenuItem | null)[]).map((item, i) =>
                 item === null ? (
                   <div
                     key={i}
