@@ -332,7 +332,7 @@ export default function ProjectsContent() {
                         fontSize: "10px", cursor: "pointer", padding: "2px 6px",
                         fontFamily: "var(--win98-font)",
                       }}
-                    >⬅</button>
+                    >⬅︎</button>
                   )}
                   {activeShot < shots.length - 1 && (
                     <button
@@ -344,7 +344,7 @@ export default function ProjectsContent() {
                         fontSize: "10px", cursor: "pointer", padding: "2px 6px",
                         fontFamily: "var(--win98-font)",
                       }}
-                    >➡</button>
+                    >➡︎</button>
                   )}
                 </div>
 
@@ -454,7 +454,7 @@ export default function ProjectsContent() {
                   style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
                   onClick={() => setActiveShot((i) => Math.max(i - 1, 0))}
                   disabled={activeShot === 0}
-                >⬅ Prev</button>
+                >⬅︎ Prev</button>
                 <span style={{ fontSize: "8px", color: "#808080" }}>
                   {project.screenshots[activeShot].caption}
                 </span>
@@ -462,7 +462,7 @@ export default function ProjectsContent() {
                   style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
                   onClick={() => setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1))}
                   disabled={activeShot === project.screenshots.length - 1}
-                >Next ➡</button>
+                >Next ➡︎</button>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", paddingTop: "2px" }}>
                 <button
