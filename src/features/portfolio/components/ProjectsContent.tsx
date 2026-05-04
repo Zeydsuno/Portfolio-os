@@ -96,7 +96,6 @@ export default function ProjectsContent() {
   const [activeShot, setActiveShot] = useState<number>(0);
   const [isNarrow, setIsNarrow] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const lbTouchRef = useRef<{ x: number } | null>(null);
   const project = PROJECTS.find((p) => p.id === selected) ?? PROJECTS[0];
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -404,130 +403,70 @@ export default function ProjectsContent() {
 
       {/* Lightbox */}
       {lightboxOpen && project.screenshots && createPortal(
-        isNarrow ? (
-          /* Mobile: fullscreen */
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.88)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => setLightboxOpen(false)}
+        >
           <div
-            style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#000", touchAction: "none" }}
-            onTouchStart={(e) => { lbTouchRef.current = { x: e.touches[0].clientX }; }}
-            onTouchEnd={(e) => {
-              if (!lbTouchRef.current) return;
-              const dx = e.changedTouches[0].clientX - lbTouchRef.current.x;
-              lbTouchRef.current = null;
-              if (Math.abs(dx) < 40) return;
-              const shots = project.screenshots!;
-              if (dx < 0) setActiveShot((i) => Math.min(i + 1, shots.length - 1));
-              else setActiveShot((i) => Math.max(i - 1, 0));
-            }}
+            className="window"
+            style={{ maxWidth: "90vw", display: "flex", flexDirection: "column" }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ position: "absolute", inset: 0 }}>
-              <Image
-                src={project.screenshots[activeShot].src}
-                alt={project.screenshots[activeShot].caption}
-                fill
-                style={{ objectFit: "contain" }}
-                sizes="100vw"
-                quality={100}
-              />
-            </div>
-            {/* Close */}
-            <button
-              style={{
-                position: "absolute", top: 16, right: 16, width: 48, height: 48,
-                fontSize: 22, background: "rgba(0,0,0,0.65)", color: "#fff",
-                border: "2px solid #fff", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1,
-              }}
-              onClick={() => setLightboxOpen(false)}
-            >✕</button>
-            {/* Prev */}
-            {activeShot > 0 && (
-              <button
-                style={{
-                  position: "absolute", left: 0, top: 0, bottom: 0, width: 64,
-                  background: "rgba(0,0,0,0.25)", border: "none",
-                  color: "#fff", fontSize: 28, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1,
-                }}
-                onClick={() => setActiveShot((i) => Math.max(i - 1, 0))}
-              >◀</button>
-            )}
-            {/* Next */}
-            {activeShot < project.screenshots.length - 1 && (
-              <button
-                style={{
-                  position: "absolute", right: 0, top: 0, bottom: 0, width: 64,
-                  background: "rgba(0,0,0,0.25)", border: "none",
-                  color: "#fff", fontSize: 28, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1,
-                }}
-                onClick={() => setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1))}
-              >▶</button>
-            )}
-            {/* Caption */}
-            <div
-              style={{
-                position: "absolute", bottom: 0, left: 0, right: 0,
-                background: "rgba(0,0,0,0.7)", color: "#fff",
-                padding: "10px 72px", fontSize: 12, textAlign: "center",
-                fontFamily: "Tahoma, sans-serif",
-              }}
-            >
-              {project.screenshots[activeShot].caption} · {activeShot + 1}/{project.screenshots.length}
-            </div>
-          </div>
-        ) : (
-          /* Desktop: Win98 window */
-          <div
-            style={{
-              position: "fixed", inset: 0, zIndex: 9999,
-              background: "rgba(0,0,0,0.88)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-            onClick={() => setLightboxOpen(false)}
-          >
-            <div
-              className="window"
-              style={{ maxWidth: "90vw", display: "flex", flexDirection: "column" }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="title-bar">
-                <div className="title-bar-text" style={{ fontSize: "9px" }}>
-                  🖼️ {project.screenshots[activeShot].caption} ({activeShot + 1}/{project.screenshots.length})
-                </div>
-                <div className="title-bar-controls">
-                  <button aria-label="Close" onClick={() => setLightboxOpen(false)} />
-                </div>
+            <div className="title-bar">
+              <div className="title-bar-text" style={{ fontSize: "9px" }}>
+                🖼️ {project.screenshots[activeShot].caption} ({activeShot + 1}/{project.screenshots.length})
               </div>
-              <div className="window-body" style={{ padding: "4px", display: "flex", flexDirection: "column", gap: "4px", ...FONT }}>
-                <div style={{ position: "relative", width: "min(85vw, 1100px)", height: "min(75vh, 700px)", background: "#000" }}>
-                  <Image
-                    src={project.screenshots[activeShot].src}
-                    alt={project.screenshots[activeShot].caption}
-                    fill
-                    style={{ objectFit: "contain" }}
-                    sizes="90vw"
-                    quality={100}
-                  />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                  <button
-                    style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
-                    onClick={() => setActiveShot((i) => Math.max(i - 1, 0))}
-                    disabled={activeShot === 0}
-                  >◀ Prev</button>
-                  <span style={{ fontSize: "8px", color: "#808080" }}>
-                    {project.screenshots[activeShot].caption}
-                  </span>
-                  <button
-                    style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
-                    onClick={() => setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1))}
-                    disabled={activeShot === project.screenshots.length - 1}
-                  >Next ▶</button>
-                </div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={() => setLightboxOpen(false)} />
+              </div>
+            </div>
+            <div
+              className="window-body"
+              style={{ padding: "4px", display: "flex", flexDirection: "column", gap: "4px", ...FONT }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: "min(85vw, 1100px)",
+                  height: "min(75vh, 700px)",
+                  background: "#000",
+                }}
+              >
+                <Image
+                  src={project.screenshots[activeShot].src}
+                  alt={project.screenshots[activeShot].caption}
+                  fill
+                  style={{ objectFit: "contain" }}
+                  sizes="90vw"
+                  quality={100}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                <button
+                  style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
+                  onClick={() => setActiveShot((i) => Math.max(i - 1, 0))}
+                  disabled={activeShot === 0}
+                >◀ Prev</button>
+                <span style={{ fontSize: "8px", color: "#808080" }}>
+                  {project.screenshots[activeShot].caption}
+                </span>
+                <button
+                  style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
+                  onClick={() => setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1))}
+                  disabled={activeShot === project.screenshots.length - 1}
+                >Next ▶</button>
               </div>
             </div>
           </div>
-        ),
+        </div>,
         document.body
       )}
     </div>
