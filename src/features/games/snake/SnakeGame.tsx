@@ -342,9 +342,9 @@ export default function SnakeGame() {
         <div />
         <button style={btnStyle} onPointerDown={() => handleDPad("UP")}>▲</button>
         <div />
-        <button style={btnStyle} onPointerDown={() => handleDPad("LEFT")}>◀</button>
+        <button style={btnStyle} onPointerDown={() => handleDPad("LEFT")}>◄</button>
         <button style={btnStyle} onPointerDown={() => handleDPad("DOWN")}>▼</button>
-        <button style={btnStyle} onPointerDown={() => handleDPad("RIGHT")}>▶</button>
+        <button style={btnStyle} onPointerDown={() => handleDPad("RIGHT")}>►</button>
       </div>
     </div>
   );
