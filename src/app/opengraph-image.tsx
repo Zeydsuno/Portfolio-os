@@ -96,7 +96,7 @@ export default function Image() {
           >
             <span>📄 Readme.txt — Notepad</span>
             <div style={{ display: "flex", gap: "4px" }}>
-              {["_", "□", "✕"].map((btn) => (
+              {["_", "[ ]", "X"].map((btn) => (
                 <div
                   key={btn}
                   style={{
@@ -194,7 +194,6 @@ export default function Image() {
               gap: "8px",
             }}
           >
-            <span>⊞</span>
             <span>Start</span>
           </div>
         </div>
