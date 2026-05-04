@@ -144,6 +144,17 @@ function Submenu({ items, onAction }: SubmenuProps) {
   );
 }
 
+function formatLastVisit(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
 export default function Taskbar() {
   const { windows, focusedWindowId, openWindow, toggleWindowFromTaskbar, muted, toggleMute } = useDesktopStore();
   const [startOpen, setStartOpen] = useState(false);
@@ -152,14 +163,13 @@ export default function Taskbar() {
   const [showRun, setShowRun] = useState(false);
   const [showBSOD, setShowBSOD] = useState(false);
   const [showDisplayProps, setShowDisplayProps] = useState(false);
-  const [lastVisit, setLastVisit] = useState<string | null>(null);
+  const [lastVisit] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("portfolio_last_visit") : null
+  );
   const startRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const key = "portfolio_last_visit";
-    const prev = localStorage.getItem(key);
-    setLastVisit(prev);
-    localStorage.setItem(key, new Date().toISOString());
+    localStorage.setItem("portfolio_last_visit", new Date().toISOString());
   }, []);
 
   // Close start menu when clicking outside
@@ -173,17 +183,6 @@ export default function Taskbar() {
     if (startOpen) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [startOpen]);
-
-  function formatLastVisit(iso: string): string {
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
-  }
 
   const desktopWidth = typeof window !== "undefined" ? window.innerWidth : 1280;
   const desktopHeight = typeof window !== "undefined" ? window.innerHeight - 32 : 720;

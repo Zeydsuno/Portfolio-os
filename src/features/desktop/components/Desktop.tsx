@@ -91,7 +91,6 @@ export default function Desktop() {
   const [errorDialog, setErrorDialog] = useState<string | null>(null);
   const [marquee, setMarquee] = useState<Marquee | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const konamiProgress = useRef<number>(0);
   const IDLE_MS = 300_000;
 
   const resetIdle = useCallback(() => {

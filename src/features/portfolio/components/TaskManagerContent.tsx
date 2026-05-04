@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useDesktopStore } from "@/features/desktop/store/desktop-store";
 
 const FONT: React.CSSProperties = { fontFamily: "var(--win98-font)" };
+
+function stableHash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+  return Math.abs(h);
+}
 
 type Tab = "applications" | "processes" | "performance";
 
@@ -77,11 +83,12 @@ function drawGraph(canvas: HTMLCanvasElement, samples: number[], color: string) 
 
 function useCpuEstimate() {
   const [cpu, setCpu] = useState(5);
-  const lastFrameTime = useRef(performance.now());
+  const lastFrameTime = useRef<number>(0);
   const rafRef = useRef<number>(0);
   const samplesRef = useRef<number[]>([]);
 
   useEffect(() => {
+    lastFrameTime.current = performance.now();
     const measure = (now: number) => {
       const delta = now - lastFrameTime.current;
       lastFrameTime.current = now;
@@ -100,21 +107,18 @@ function useCpuEstimate() {
   return cpu;
 }
 
+const HAS_MEMORY_API = typeof performance !== "undefined" && "memory" in performance;
+
 function useRamInfo() {
-  const [used, setUsed] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [percent, setPercent] = useState(0);
-  const hasMemoryApi = typeof performance !== "undefined" && "memory" in performance;
+  const [used, setUsed] = useState(() => {
+    if (HAS_MEMORY_API) return 0;
+    return Math.round((62 + Math.random() * 4) * 0.64);
+  });
+  const [total, setTotal] = useState(() => HAS_MEMORY_API ? 0 : 64);
+  const [percent, setPercent] = useState(() => HAS_MEMORY_API ? 0 : Math.round(62 + Math.random() * 4));
 
   useEffect(() => {
-    if (!hasMemoryApi) {
-      // Fallback: simulate stable ~62%
-      const base = 62 + Math.random() * 4;
-      setPercent(Math.round(base));
-      setUsed(Math.round(base * 0.64));
-      setTotal(64);
-      return;
-    }
+    if (!HAS_MEMORY_API) return;
     const update = () => {
       const mem = (performance as unknown as { memory: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
       const usedMB = Math.round(mem.usedJSHeapSize / 1024 / 1024);
@@ -127,7 +131,7 @@ function useRamInfo() {
     update();
     const id = setInterval(update, 2000);
     return () => clearInterval(id);
-  }, [hasMemoryApi]);
+  }, []);
 
   return { used, total, percent };
 }
@@ -183,12 +187,12 @@ export default function TaskManagerContent() {
   const visibleWindows = windows.filter((w) => w.id !== "taskmanager");
   const totalProcesses = visibleWindows.length + SYSTEM_PROCESSES.length;
 
-  const dynamicProcesses = visibleWindows.map((w, i) => ({
+  const dynamicProcesses = useMemo(() => visibleWindows.map((w, i) => ({
     name: w.title.toLowerCase().replace(/\s+/g, "") + ".exe",
     pid: 1200 + i * 4,
     cpu: w.id === selectedAppId ? 2 : 0,
-    mem: 4096 + Math.round(Math.random() * 2048),
-  }));
+    mem: 4096 + (stableHash(w.id) % 2048),
+  })), [visibleWindows, selectedAppId]);
 
   const allProcesses = [...SYSTEM_PROCESSES, ...dynamicProcesses];
 

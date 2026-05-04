@@ -102,16 +102,16 @@ export default function ProjectsContent() {
     el.focus();
   }, []);
 
-  useEffect(() => { setActiveShot(0); }, [selected]);
-
   function handleKeyDown(e: React.KeyboardEvent) {
     const idx = PROJECTS.findIndex((p) => p.id === selected);
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelected(PROJECTS[Math.min(idx + 1, PROJECTS.length - 1)].id);
+      setActiveShot(0);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelected(PROJECTS[Math.max(idx - 1, 0)].id);
+      setActiveShot(0);
     }
   }
 
@@ -154,7 +154,7 @@ export default function ProjectsContent() {
           {PROJECTS.map((p) => (
             <div
               key={p.id}
-              onClick={() => setSelected(p.id)}
+              onClick={() => { setSelected(p.id); setActiveShot(0); }}
               style={{
                 display: "flex",
                 alignItems: "center",

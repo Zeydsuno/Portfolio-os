@@ -101,7 +101,7 @@ function flipTopCard(col: Card[]): Card[] {
 
 // ─── State mutations (pure) ───────────────────────────────────────────────────
 
-function removeFromSource(state: GameState, from: From, count: number): GameState {
+function removeFromSource(state: GameState, from: From, _count: number): GameState {
   if (from.zone === "waste") {
     return { ...state, waste: state.waste.slice(0, -1) };
   }
@@ -262,7 +262,7 @@ export default function SolitaireGame() {
       // Try foundations
       for (let i = 0; i < 4; i++) {
         if (hit(foundRefs.current[i])) {
-          const base = removeFromSource(drag.from.zone === "waste" ? game : game, game, drag.from);
+          const base = removeFromSource(game, drag.from, drag.cards.length);
           const result = placeOnFoundation(base, drag.cards, i);
           if (result) { setGame(result); return; }
           break;
