@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
+import DPad from "@/components/DPad";
 
 const CELL_SIZE = 16;
 const GRID_W = 20;
@@ -257,17 +258,6 @@ export default function SnakeGame() {
     else if (d === "RIGHT" && cur !== "LEFT") nextDirRef.current = "RIGHT";
   }
 
-  const btnStyle: React.CSSProperties = {
-    width: 64,
-    height: 64,
-    fontSize: "22px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    userSelect: "none",
-    touchAction: "none",
-  };
 
   return (
     <div className="flex flex-col items-center">
@@ -337,15 +327,7 @@ export default function SnakeGame() {
         </div>
       )}
 
-      {/* On-screen D-pad — mobile only */}
-      <div className="grid md:hidden" style={{ gridTemplateColumns: "repeat(3, 64px)", gap: "8px", marginTop: "12px" }}>
-        <div />
-        <button style={btnStyle} onPointerDown={() => handleDPad("UP")}>▲</button>
-        <div />
-        <button style={btnStyle} onPointerDown={() => handleDPad("LEFT")}>◄</button>
-        <button style={btnStyle} onPointerDown={() => handleDPad("DOWN")}>▼</button>
-        <button style={btnStyle} onPointerDown={() => handleDPad("RIGHT")}>►</button>
-      </div>
+      <DPad onDirection={handleDPad} />
     </div>
   );
 }
