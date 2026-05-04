@@ -93,8 +93,16 @@ const FONT: React.CSSProperties = { fontFamily: "var(--win98-font)" };
 export default function ProjectsContent() {
   const [selected, setSelected] = useState<string>(PROJECTS[0].id);
   const [activeShot, setActiveShot] = useState<number>(0);
+  const [isNarrow, setIsNarrow] = useState(false);
   const project = PROJECTS.find((p) => p.id === selected) ?? PROJECTS[0];
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth < 600);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const el = listRef.current;
@@ -134,15 +142,25 @@ export default function ProjectsContent() {
       </div>
 
       {/* Main split */}
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+      <div style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: isNarrow ? "column" : "row" }}>
 
-        {/* Left — project list */}
+        {/* Left/Top — project list */}
         <div
           ref={listRef}
           className="sunken-panel"
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          style={{
+          style={isNarrow ? {
+            width: "100%",
+            flexShrink: 0,
+            overflowX: "auto",
+            overflowY: "hidden",
+            display: "flex",
+            flexDirection: "row",
+            margin: "4px 4px 0 4px",
+            padding: 0,
+            outline: "none",
+          } : {
             width: 160,
             flexShrink: 0,
             overflowY: "auto",
@@ -159,12 +177,14 @@ export default function ProjectsContent() {
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
-                padding: "5px 8px",
+                padding: isNarrow ? "6px 10px" : "5px 8px",
                 cursor: "default",
                 fontSize: "8px",
                 background: selected === p.id ? "#000080" : "transparent",
                 color: selected === p.id ? "#fff" : "#000",
                 userSelect: "none",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               <span style={{ fontSize: "14px", lineHeight: 1 }}>{p.icon}</span>

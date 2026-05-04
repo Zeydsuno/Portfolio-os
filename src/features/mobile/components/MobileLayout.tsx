@@ -15,7 +15,7 @@ interface Section {
   label: string;
   icon: string;
   title: string;
-  content: React.ReactNode;
+  renderContent: () => React.ReactNode;
 }
 
 const SECTIONS: Section[] = [
@@ -24,46 +24,42 @@ const SECTIONS: Section[] = [
     label: "About",
     icon: "📄",
     title: "README.TXT",
-    content: <ReadmeContent />,
+    renderContent: () => <ReadmeContent />,
   },
   {
     id: "cv",
     label: "CV",
     icon: "🗂️",
     title: "CV.TXT",
-    content: <CVContent />,
+    renderContent: () => <CVContent />,
   },
   {
     id: "projects",
     label: "Projects",
     icon: "💾",
     title: "Projects.exe",
-    content: (
-      <div style={{ overflowX: "auto" }}>
-        <ProjectsContent />
-      </div>
-    ),
+    renderContent: () => <ProjectsContent />,
   },
   {
     id: "contact",
     label: "Mail",
     icon: "✉️",
     title: "Mail.bat",
-    content: <MailContent />,
+    renderContent: () => <MailContent />,
   },
   {
     id: "snake",
     label: "Snake",
     icon: "🐍",
     title: "Snake.exe",
-    content: <SnakeGame />,
+    renderContent: () => <SnakeGame />,
   },
   {
     id: "minesweeper",
     label: "Mines",
     icon: "💣",
     title: "Minesweeper.exe",
-    content: <Minesweeper />,
+    renderContent: () => <Minesweeper />,
   },
 ];
 
@@ -224,7 +220,7 @@ export default function MobileLayout() {
               fontSize: "12px",
             }}
           >
-            {section.content}
+            {section.renderContent()}
           </div>
         </div>
       </div>

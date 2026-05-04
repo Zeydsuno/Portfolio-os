@@ -33,6 +33,7 @@ export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [status, setStatus] = useState<GameStatus>("waiting");
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Game state in refs to avoid re-renders each frame
   const snakeRef = useRef<Point[]>([{ x: 10, y: 10 }]);
@@ -201,21 +202,83 @@ export default function SnakeGame() {
     draw();
   }, [draw]);
 
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const start = touchStartRef.current;
+    if (!start) return;
+    touchStartRef.current = null;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (Math.max(absDx, absDy) < 20) {
+      if (statusRef.current !== "playing") startGame();
+      return;
+    }
+    if (absDx > absDy) {
+      if (dx > 0 && dirRef.current !== "LEFT") nextDirRef.current = "RIGHT";
+      else if (dx < 0 && dirRef.current !== "RIGHT") nextDirRef.current = "LEFT";
+    } else {
+      if (dy > 0 && dirRef.current !== "UP") nextDirRef.current = "DOWN";
+      else if (dy < 0 && dirRef.current !== "DOWN") nextDirRef.current = "UP";
+    }
+  }
+
+  function handleDPad(d: Direction) {
+    if (statusRef.current === "waiting" || statusRef.current === "gameover") {
+      startGame();
+      return;
+    }
+    const cur = dirRef.current;
+    if (d === "UP" && cur !== "DOWN") nextDirRef.current = "UP";
+    else if (d === "DOWN" && cur !== "UP") nextDirRef.current = "DOWN";
+    else if (d === "LEFT" && cur !== "RIGHT") nextDirRef.current = "LEFT";
+    else if (d === "RIGHT" && cur !== "LEFT") nextDirRef.current = "RIGHT";
+  }
+
+  const btnStyle: React.CSSProperties = {
+    width: 44,
+    height: 44,
+    fontSize: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    userSelect: "none",
+    touchAction: "none",
+  };
+
   return (
     <div className="flex flex-col items-center">
       <canvas
         ref={canvasRef}
         width={CANVAS_W}
         height={CANVAS_H}
-        style={{ imageRendering: "pixelated", border: "2px inset" }}
+        style={{ imageRendering: "pixelated", border: "2px inset", maxWidth: "100%", height: "auto", touchAction: "none" }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       />
-      <div className="status-bar" style={{ width: CANVAS_W }}>
+      <div className="status-bar" style={{ width: "100%", maxWidth: CANVAS_W }}>
         <p className="status-bar-field">Score: {score}</p>
         <p className="status-bar-field">
-          {status === "waiting" && "Press Enter to start"}
-          {status === "playing" && "Use arrow keys"}
-          {status === "gameover" && "Game Over! Press Enter"}
+          {status === "waiting" && "Tap or press Enter"}
+          {status === "playing" && "Swipe or arrow keys"}
+          {status === "gameover" && "Game Over! Tap to retry"}
         </p>
+      </div>
+
+      {/* On-screen D-pad for mobile */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 44px)", gap: "2px", marginTop: "8px" }}>
+        <div />
+        <button style={btnStyle} onPointerDown={() => handleDPad("UP")}>▲</button>
+        <div />
+        <button style={btnStyle} onPointerDown={() => handleDPad("LEFT")}>◀</button>
+        <button style={btnStyle} onPointerDown={() => handleDPad("DOWN")}>▼</button>
+        <button style={btnStyle} onPointerDown={() => handleDPad("RIGHT")}>▶</button>
       </div>
     </div>
   );
