@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useDesktopStore } from "@/features/desktop/store/desktop-store";
-import { DESKTOP_ICONS } from "@/features/desktop/data/desktop-items";
+import { DESKTOP_ICONS, GAME_ICONS } from "@/features/desktop/data/desktop-items";
+
+const ALL_ICONS = [...DESKTOP_ICONS, ...GAME_ICONS];
 import Clock from "./Clock";
 import ShutdownDialog from "@/features/desktop/components/ShutdownDialog";
 import RunDialog from "@/features/desktop/components/RunDialog";
@@ -188,7 +190,7 @@ export default function Taskbar() {
   const desktopWidth = typeof window !== "undefined" ? window.innerWidth : 1280;
   const desktopHeight = typeof window !== "undefined" ? window.innerHeight - 32 : 720;
 
-  const getIconSvg = (id: string) => DESKTOP_ICONS.find((i) => i.id === id)?.icon ?? "";
+  const getIconSvg = (id: string) => ALL_ICONS.find((i) => i.id === id)?.icon ?? "";
 
   const closeMenu = () => {
     setStartOpen(false);

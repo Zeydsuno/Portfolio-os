@@ -2,6 +2,18 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useDesktopStore } from "@/features/desktop/store/desktop-store";
+import { DESKTOP_ICONS, GAME_ICONS } from "@/features/desktop/data/desktop-items";
+
+const ALL_ICONS = [...DESKTOP_ICONS, ...GAME_ICONS];
+
+function SmallIcon({ id }: { id: string }) {
+  const svg = ALL_ICONS.find((i) => i.id === id)?.icon ?? "";
+  if (!svg) return <span style={{ fontSize: 14 }}>🪟</span>;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={`data:image/svg+xml;base64,${btoa(svg)}`} width={16} height={16} alt="" style={{ imageRendering: "pixelated", flexShrink: 0 }} />
+  );
+}
 
 const FONT: React.CSSProperties = { fontFamily: "var(--win98-font)" };
 
@@ -32,12 +44,6 @@ const SYSTEM_PROCESSES = [
   { name: "msgsrv32.exe",        pid: 1108, cpu: 0, mem: 820 },
 ];
 
-const APP_ICONS: Record<string, string> = {
-  readme: "📄", projects: "📁", mail: "📧", cv: "📄",
-  snake: "🐍", minesweeper: "💣", mycomputer: "💻", recycle: "🗑️",
-  paint: "🎨", ie: "🌐", calculator: "🧮", solitaire: "🃏",
-  taskmanager: "🖥️",
-};
 
 function drawGraph(canvas: HTMLCanvasElement, samples: number[], color: string) {
   const ctx = canvas.getContext("2d");
@@ -248,7 +254,7 @@ export default function TaskManagerContent() {
                     }}
                   >
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
-                      <span>{APP_ICONS[w.id] ?? "🪟"}</span>
+                      <SmallIcon id={w.id} />
                       {w.title}
                     </span>
                     <span style={{ color: selectedAppId === w.id ? "#80ff80" : w.minimized ? "#808080" : "#008000" }}>
