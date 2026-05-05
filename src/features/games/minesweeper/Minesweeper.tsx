@@ -126,6 +126,21 @@ export default function Minesweeper() {
   const [isNarrow, setIsNarrow] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const startedRef = useRef(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      const baseSize = COLS * CELL_PX;
+      const newScale = Math.min(width / baseSize, height / baseSize);
+      setScale(Math.max(0.1, newScale));
+    });
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth < 600);
@@ -217,7 +232,7 @@ export default function Minesweeper() {
   const smiley = gameStatus === "won" ? "B)" : gameStatus === "lost" ? "X(" : ":)";
 
   return (
-    <div className="flex flex-col items-center gap-1" style={{ padding: "4px" }}>
+    <div className="flex flex-col items-center gap-1 w-full h-full overflow-hidden" style={{ padding: "4px" }}>
       {/* Header: mine counter, smiley, timer */}
       <div
         className="flex items-center justify-between w-full"
@@ -294,50 +309,54 @@ export default function Minesweeper() {
       </div>}
 
       {/* Grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${COLS}, ${CELL_PX}px)`,
-          gridTemplateRows: `repeat(${ROWS}, ${CELL_PX}px)`,
-          border: "2px inset",
-        }}
-      >
-        {board.map((row, r) =>
-          row.map((cell, c) => (
-            <button
-              key={`${r}-${c}`}
-              onClick={() => handleClick(r, c)}
-              onContextMenu={(e) => handleRightClick(e, r, c)}
-              style={{
-                width: CELL_PX,
-                height: CELL_PX,
-                padding: 0,
-                fontSize: "12px",
-                fontFamily: "'Press Start 2P', cursive",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: gameStatus === "playing" ? "pointer" : "default",
-                color: cell.revealed && !cell.isMine
-                  ? NUMBER_COLORS[cell.adjacentMines] || "#000"
-                  : "#000",
-                backgroundColor: cell.revealed ? "#c0c0c0" : undefined,
-                border: cell.revealed ? "1px solid #808080" : undefined,
-              }}
-            >
-              {cell.revealed
-                ? cell.isMine
-                  ? "*"
-                  : cell.adjacentMines > 0
-                    ? cell.adjacentMines
-                    : ""
-                : cell.flagged
-                  ? "F"
-                  : ""}
-            </button>
-          ))
-        )}
+      <div ref={wrapperRef} className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden">
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: "center center",
+            display: "grid",
+            gridTemplateColumns: `repeat(${COLS}, ${CELL_PX}px)`,
+            gridTemplateRows: `repeat(${ROWS}, ${CELL_PX}px)`,
+            border: "2px inset",
+          }}
+        >
+          {board.map((row, r) =>
+            row.map((cell, c) => (
+              <button
+                key={`${r}-${c}`}
+                onClick={() => handleClick(r, c)}
+                onContextMenu={(e) => handleRightClick(e, r, c)}
+                style={{
+                  width: CELL_PX,
+                  height: CELL_PX,
+                  padding: 0,
+                  fontSize: "12px",
+                  fontFamily: "'Press Start 2P', cursive",
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: gameStatus === "playing" ? "pointer" : "default",
+                  color: cell.revealed && !cell.isMine
+                    ? NUMBER_COLORS[cell.adjacentMines] || "#000"
+                    : "#000",
+                  backgroundColor: cell.revealed ? "#c0c0c0" : undefined,
+                  border: cell.revealed ? "1px solid #808080" : undefined,
+                }}
+              >
+                {cell.revealed
+                  ? cell.isMine
+                    ? "*"
+                    : cell.adjacentMines > 0
+                      ? cell.adjacentMines
+                      : ""
+                  : cell.flagged
+                    ? "F"
+                    : ""}
+              </button>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

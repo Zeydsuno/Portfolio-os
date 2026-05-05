@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import DPad from "@/components/DPad";
+import { playSnakeEat, playSnakeDie, playDinoPoint } from "@/features/desktop/utils/sounds";
 
 const CELL_SIZE = 16;
 const GRID_W = 20;
@@ -35,6 +36,7 @@ export default function SnakeGame() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [status, setStatus] = useState<GameStatus>("waiting");
+  const [popups, setPopups] = useState<{ id: number; x: number; y: number; text: string; color: string }[]>([]);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   // Game state in refs to avoid re-renders each frame
@@ -42,9 +44,12 @@ export default function SnakeGame() {
   const dirRef = useRef<Direction>("RIGHT");
   const nextDirRef = useRef<Direction>("RIGHT");
   const foodRef = useRef<Point>({ x: 15, y: 10 });
+  const goldenFoodRef = useRef<{ x: number; y: number; timer: number } | null>(null);
+  const popupIdRef = useRef(0);
   const scoreRef = useRef(0);
   const highScoreRef = useRef(0);
   const statusRef = useRef<GameStatus>("waiting");
+  const speedRef = useRef(TICK_MS);
   const loopRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const draw = useCallback(() => {
@@ -81,6 +86,20 @@ export default function SnakeGame() {
       CELL_SIZE - 4
     );
 
+    // Golden Food
+    if (goldenFoodRef.current) {
+      const gf = goldenFoodRef.current;
+      if (gf.timer > 15 || Math.floor(Date.now() / 150) % 2 === 0) {
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(
+          gf.x * CELL_SIZE + 1,
+          gf.y * CELL_SIZE + 1,
+          CELL_SIZE - 2,
+          CELL_SIZE - 2
+        );
+      }
+    }
+
     // Snake
     const snake = snakeRef.current;
     snake.forEach((seg, i) => {
@@ -99,13 +118,17 @@ export default function SnakeGame() {
     dirRef.current = "RIGHT";
     nextDirRef.current = "RIGHT";
     foodRef.current = spawnFood(snakeRef.current);
+    goldenFoodRef.current = null;
+    setPopups([]);
     scoreRef.current = 0;
+    speedRef.current = TICK_MS;
     setScore(0);
     statusRef.current = "playing";
     setStatus("playing");
   }, []);
 
   const triggerGameOver = useCallback(() => {
+    playSnakeDie();
     if (scoreRef.current > highScoreRef.current) {
       highScoreRef.current = scoreRef.current;
       setHighScore(highScoreRef.current);
@@ -114,7 +137,7 @@ export default function SnakeGame() {
     setStatus("gameover");
   }, []);
 
-  const tick = useCallback(() => {
+  const tick = useCallback(function tickFn() {
     if (statusRef.current !== "playing") return;
 
     const snake = snakeRef.current;
@@ -134,28 +157,74 @@ export default function SnakeGame() {
       newHead.y < 0 ||
       newHead.y >= GRID_H
     ) {
+      snakeRef.current = [newHead, ...snake.slice(0, -1)];
+      draw();
       triggerGameOver();
       return;
     }
 
     // Self collision
     if (snake.some((s) => s.x === newHead.x && s.y === newHead.y)) {
+      snakeRef.current = [newHead, ...snake.slice(0, -1)];
+      draw();
       triggerGameOver();
       return;
     }
 
     const newSnake = [newHead, ...snake];
 
-    // Eat food
+    let ateFood = false;
+
+    // Eat Golden Food
     if (
+      goldenFoodRef.current &&
+      newHead.x === goldenFoodRef.current.x &&
+      newHead.y === goldenFoodRef.current.y
+    ) {
+      playDinoPoint();
+      scoreRef.current += 50;
+      setScore(scoreRef.current);
+      goldenFoodRef.current = null;
+      ateFood = true;
+
+      const id = ++popupIdRef.current;
+      setPopups((p) => [...p, { id, x: newHead.x, y: newHead.y, text: "+50", color: "#ffd700" }]);
+      setTimeout(() => setPopups((p) => p.filter((x) => x.id !== id)), 1000);
+    }
+    // Eat regular food
+    else if (
       newHead.x === foodRef.current.x &&
       newHead.y === foodRef.current.y
     ) {
+      playSnakeEat();
       scoreRef.current += 10;
       setScore(scoreRef.current);
       foodRef.current = spawnFood(newSnake);
+      ateFood = true;
+
+      // Speed up the game
+      speedRef.current = Math.max(50, speedRef.current - 5);
+      if (loopRef.current) clearInterval(loopRef.current);
+      loopRef.current = setInterval(tickFn, speedRef.current);
+
+      const id = ++popupIdRef.current;
+      setPopups((p) => [...p, { id, x: newHead.x, y: newHead.y, text: "+10", color: "#00ff00" }]);
+      setTimeout(() => setPopups((p) => p.filter((x) => x.id !== id)), 1000);
+
+      // Spawn golden apple? (15% chance)
+      if (!goldenFoodRef.current && Math.random() < 0.15) {
+        goldenFoodRef.current = { ...spawnFood([...newSnake, foodRef.current]), timer: 50 };
+      }
     } else {
       newSnake.pop();
+    }
+
+    // Golden apple timer
+    if (goldenFoodRef.current && !ateFood) {
+      goldenFoodRef.current.timer--;
+      if (goldenFoodRef.current.timer <= 0) {
+        goldenFoodRef.current = null;
+      }
     }
 
     snakeRef.current = newSnake;
@@ -166,7 +235,7 @@ export default function SnakeGame() {
     if (loopRef.current) clearInterval(loopRef.current);
     reset();
     draw();
-    loopRef.current = setInterval(tick, TICK_MS);
+    loopRef.current = setInterval(tick, speedRef.current);
   }, [reset, draw, tick]);
 
   const quitToMenu = useCallback(() => {
@@ -260,16 +329,48 @@ export default function SnakeGame() {
 
 
   return (
-    <div className="flex flex-col items-center">
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_W}
-        height={CANVAS_H}
-        style={{ imageRendering: "pixelated", border: "2px inset", maxWidth: "100%", height: "auto", touchAction: "none" }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      />
-      <div className="status-bar" style={{ width: "100%", maxWidth: CANVAS_W }}>
+    <div className="flex flex-col items-center w-full h-full overflow-hidden">
+      <style>{`
+        @keyframes snakeFloatUp {
+          0% { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(-30px) scale(1.5); opacity: 0; }
+        }
+      `}</style>
+      
+      <div className="flex-1 w-full flex items-center justify-center min-h-0 p-2">
+        <div style={{ position: "relative", height: "100%", maxWidth: "100%", maxHeight: "100%", aspectRatio: "1/1" }}>
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_W}
+            height={CANVAS_H}
+            style={{ width: "100%", height: "100%", imageRendering: "pixelated", border: "2px inset", touchAction: "none" }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          />
+          {popups.map((p) => (
+            <div
+              key={p.id}
+              style={{
+                position: "absolute",
+                left: `${(p.x / GRID_W) * 100}%`,
+                top: `calc(${(p.y / GRID_H) * 100}% - 10px)`,
+                color: p.color,
+                fontWeight: "bold",
+                fontSize: "14px",
+                fontFamily: "'Press Start 2P', cursive",
+                pointerEvents: "none",
+                textShadow: "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
+                animation: "snakeFloatUp 1s ease-out forwards",
+                zIndex: 10,
+              }}
+            >
+              {p.text}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="status-bar" style={{ width: "100%" }}>
         <p className="status-bar-field">Score: {score}</p>
         <p className="status-bar-field">
           {status === "waiting" && (

@@ -429,17 +429,21 @@ export default function DinoGame() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 8, background: "#c0c0c0", userSelect: "none" }}>
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_W}
-        height={CANVAS_H}
-        style={{ border: "2px inset #808080", cursor: "pointer", maxWidth: "100%", display: "block" }}
-        onPointerDown={(e) => jump(e.timeStamp)}
-        onPointerUp={releaseJump}
-        onPointerLeave={releaseJump}
-      />
-      <div className="flex md:hidden gap-3 mt-3">
+    <div className="flex flex-col items-center w-full h-full overflow-hidden" style={{ background: "#c0c0c0", userSelect: "none", padding: 8 }}>
+      <div className="flex-1 w-full flex items-center justify-center min-h-0">
+        <div style={{ position: "relative", height: "100%", maxWidth: "100%", maxHeight: "100%", aspectRatio: "600/150" }}>
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_W}
+            height={CANVAS_H}
+            style={{ width: "100%", height: "100%", imageRendering: "pixelated", border: "2px inset #808080", cursor: "pointer", display: "block", touchAction: "none" }}
+            onPointerDown={(e) => jump(e.timeStamp)}
+            onPointerUp={releaseJump}
+            onPointerLeave={releaseJump}
+          />
+        </div>
+      </div>
+      <div className="flex md:hidden gap-3 mt-3 shrink-0">
         <button
           style={btnStyle}
           onPointerDown={() => setDuck(true)}

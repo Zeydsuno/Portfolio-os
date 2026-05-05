@@ -106,3 +106,24 @@ export function playDinoPoint() {
   tone(ac, 880, 0.00, 0.04, 0.06, "square");
   tone(ac, 1100, 0.03, 0.05, 0.05, "square");
 }
+
+// ── Snake game sounds ─────────────────────────────────────────────────────────
+
+/** High-pitched blip when snake eats food */
+export function playSnakeEat() {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  tone(ac, 600, 0.0, 0.05, 0.05, "square");
+  tone(ac, 800, 0.05, 0.05, 0.05, "square");
+}
+
+/** Deep descending sound when snake hits a wall or itself */
+export function playSnakeDie() {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  tone(ac, 250, 0.0, 0.1, 0.15, "sawtooth");
+  tone(ac, 150, 0.1, 0.15, 0.2, "sawtooth");
+  tone(ac, 80, 0.25, 0.2, 0.2, "sawtooth");
+}

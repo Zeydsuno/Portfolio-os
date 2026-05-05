@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 type Tool = "pencil" | "eraser" | "line" | "rect" | "ellipse" | "fill";
 
@@ -61,22 +61,66 @@ function floodFill(ctx: CanvasRenderingContext2D, sx: number, sy: number, fillHe
 
 export default function PaintContent() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [tool, setTool]   = useState<Tool>("pencil");
   const [color, setColor] = useState("#000000");
   const [size, setSize]   = useState(2);
+  const [canvasSize, setCanvasSize] = useState({ width: 560, height: 400 });
 
   const drawing    = useRef(false);
   const lastPos    = useRef<Point | null>(null);
   const startPos   = useRef<Point | null>(null);
   const snapshot   = useRef<ImageData | null>(null);
+  const savedImageData = useRef<ImageData | null>(null);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let resizeTimeout: ReturnType<typeof setTimeout>;
+    const observer = new ResizeObserver((entries) => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        const { width, height } = entries[0].contentRect;
+        const newW = Math.max(560, Math.floor(width - 16));
+        const newH = Math.max(400, Math.floor(height - 16));
+        
+        setCanvasSize((prev) => {
+          if (prev.width !== newW || prev.height !== newH) {
+            const canvas = canvasRef.current;
+            if (canvas) {
+              const ctx = canvas.getContext("2d")!;
+              savedImageData.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            }
+            return { width: newW, height: newH };
+          }
+          return prev;
+        });
+      }, 150);
+    });
+
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+      clearTimeout(resizeTimeout);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
+    
+    // Fill white background for new areas
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, []);
+
+    // Restore previous drawing if exists
+    if (savedImageData.current) {
+      ctx.putImageData(savedImageData.current, 0, 0);
+      savedImageData.current = null;
+    }
+  }, [canvasSize]);
 
   const getPos = (e: React.MouseEvent): Point => {
     const r = canvasRef.current!.getBoundingClientRect();
@@ -222,11 +266,11 @@ export default function PaintContent() {
         </div>
 
         {/* Canvas area */}
-        <div style={{ flex: 1, overflow: "auto", backgroundColor: "#808080", padding: "8px" }}>
+        <div ref={containerRef} style={{ flex: 1, overflow: "auto", backgroundColor: "#808080", padding: "8px" }}>
           <canvas
             ref={canvasRef}
-            width={560}
-            height={400}
+            width={canvasSize.width}
+            height={canvasSize.height}
             style={{ display: "block", cursor: tool === "fill" ? "cell" : tool === "eraser" ? "cell" : "crosshair", backgroundColor: "#fff", boxShadow: "2px 2px 0 #000" }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
