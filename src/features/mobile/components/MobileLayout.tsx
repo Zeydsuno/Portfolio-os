@@ -162,7 +162,7 @@ export default function MobileLayout() {
           {SECTIONS.map((s) => (
             <button
               key={s.id}
-              onClick={() => setActive(s.id)}
+              onClick={() => { window.umami?.track("open_app", { name: s.id }); setActive(s.id); }}
               style={{
                 background: "transparent",
                 border: "none",
@@ -270,7 +270,7 @@ export default function MobileLayout() {
             {SECTIONS.map((s) => (
               <button
                 key={s.id}
-                onClick={() => setActive(s.id)}
+                onClick={() => { window.umami?.track("open_app", { name: s.id }); setActive(s.id); }}
                 style={{
                   ...FONT,
                   fontSize: "7px",

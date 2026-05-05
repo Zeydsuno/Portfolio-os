@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 import "98.css";
 import "./globals.css";
 
@@ -30,6 +31,11 @@ export default async function RootLayout({
       <body>
         {children}
         <Analytics />
+        <Script
+          src={process.env.NEXT_PUBLIC_UMAMI_SRC!}
+          data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID!}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

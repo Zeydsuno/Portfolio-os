@@ -106,6 +106,7 @@ export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProp
         const now = Date.now();
         if (now - lastClickTime.current < 400) {
           playWindowOpen();
+          window.umami?.track("open_app", { name: icon.id });
           openWindow(icon);
           selectIcon(null);
         } else if (wasSelected && selectedIcons.length > 1) {

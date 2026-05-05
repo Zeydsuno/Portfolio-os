@@ -8,12 +8,12 @@ export function proxy(request: NextRequest) {
   const csp = [
     "default-src 'self'",
     isDev
-      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'`
-      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://cloud.umami.is`
+      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://cloud.umami.is`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",
-    "connect-src 'self' https://api.resend.com",
+    "connect-src 'self' https://api.resend.com https://cloud.umami.is https://api-gateway.umami.dev",
     "frame-ancestors 'none'",
   ].join("; ");
 

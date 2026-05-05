@@ -1,3 +1,11 @@
+declare global {
+  interface Window {
+    umami?: {
+      track: (event: string, data?: Record<string, string | number | boolean>) => void;
+    };
+  }
+}
+
 /** Represents a desktop icon that can be double-clicked to open a window */
 export interface DesktopIconData {
   id: string;
