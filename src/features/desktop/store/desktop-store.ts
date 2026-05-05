@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { track } from "@vercel/analytics";
 import type {
   DesktopIconData,
   WindowInstance,
@@ -91,6 +92,8 @@ export const useDesktopStore = create<DesktopState>()(persist((set, get) => ({
       maximized: false,
       preMaximizeState: null,
     };
+
+    track("open_window", { id: icon.id, title: icon.windowTitle ?? icon.label });
 
     set({
       windows: [...windows, newWindow],
