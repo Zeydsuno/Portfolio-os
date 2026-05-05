@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useDesktopStore } from "../store/desktop-store";
 import { GAME_ICONS } from "../data/desktop-items";
 import { playWindowOpen } from "../utils/sounds";
+import Win98MenuBar from "@/components/Win98MenuBar";
 
 const F: React.CSSProperties = {
   fontFamily: "var(--win98-font)",
@@ -19,7 +20,27 @@ const SMALL_BTN: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
-const MENU_ITEMS = ["File", "Edit", "View", "Go", "Favorites", "Help"];
+const FOLDER_MENUS = {
+  File: [
+    { label: "New Window" }, { label: "---" }, { label: "Close" },
+  ],
+  Edit: [
+    { label: "Select All" }, { label: "Invert Selection" },
+  ],
+  View: [
+    { label: "Toolbar" }, { label: "Status Bar" }, { label: "---" },
+    { label: "Large Icons" }, { label: "Small Icons" }, { label: "List" }, { label: "Details" },
+  ],
+  Go: [
+    { label: "Back" }, { label: "Forward" }, { label: "---" }, { label: "My Computer" },
+  ],
+  Favorites: [
+    { label: "Add to Favorites..." }, { label: "Organize Favorites..." },
+  ],
+  Help: [
+    { label: "Help Topics" }, { label: "---" }, { label: "About Windows" },
+  ],
+};
 
 const TOOLBAR: Array<{ icon: string; label: string } | null> = [
   { icon: "←", label: "Back" },
@@ -44,30 +65,7 @@ export default function FolderContent() {
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
 
       {/* ── Menu bar ─────────────────────────────────────────── */}
-      <div style={{ display: "flex", borderBottom: "1px solid #808080" }}>
-        {MENU_ITEMS.map((item) => (
-          <button
-            key={item}
-            style={{
-              ...SMALL_BTN,
-              background: "transparent",
-              boxShadow: "none",
-              border: "1px solid transparent",
-              padding: "2px 6px",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "#000080";
-              (e.currentTarget as HTMLButtonElement).style.color = "#fff";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              (e.currentTarget as HTMLButtonElement).style.color = "#000";
-            }}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+      <Win98MenuBar menus={FOLDER_MENUS} />
 
       {/* ── Toolbar ──────────────────────────────────────────── */}
       <div
