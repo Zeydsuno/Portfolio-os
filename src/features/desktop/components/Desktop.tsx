@@ -304,11 +304,11 @@ export default function Desktop() {
             <div className="window-body" style={{ padding: 0, margin: 0 }}>
               {([
                 { label: "Arrange Icons", action: () => arrangeIcons(desktopHeight) },
-                { label: "Refresh", action: () => window.location.reload() },
+                { label: "Refresh", action: () => { window.umami?.track("desktop_refresh"); window.location.reload(); } },
                 null,
                 { label: "New", hasSubmenu: true },
                 null,
-                { label: "Properties", action: () => setShowDisplayProps(true) },
+                { label: "Properties", action: () => { window.umami?.track("open_properties", { source: "desktop" }); setShowDisplayProps(true); } },
               ] as (MenuItem | null)[]).map((item, i) =>
                 item === null ? (
                   <div

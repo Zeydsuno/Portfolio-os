@@ -262,6 +262,10 @@ export default function SolitaireGame() {
   }, []);
 
   useEffect(() => {
+    if (game.won) window.umami?.track("game_over", { game: "solitaire", result: "won", moves: game.moves });
+  }, [game.won, game.moves]);
+
+  useEffect(() => {
     if (!drag) return;
 
     const onMove = (e: MouseEvent) => {

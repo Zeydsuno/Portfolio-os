@@ -128,11 +128,15 @@ export default function ProjectsContent() {
     const idx = PROJECTS.findIndex((p) => p.id === selected);
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelected(PROJECTS[Math.min(idx + 1, PROJECTS.length - 1)].id);
+      const next = PROJECTS[Math.min(idx + 1, PROJECTS.length - 1)];
+      window.umami?.track("view_project", { name: next.id });
+      setSelected(next.id);
       setActiveShot(0);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelected(PROJECTS[Math.max(idx - 1, 0)].id);
+      const prev = PROJECTS[Math.max(idx - 1, 0)];
+      window.umami?.track("view_project", { name: prev.id });
+      setSelected(prev.id);
       setActiveShot(0);
     }
   }
@@ -186,7 +190,7 @@ export default function ProjectsContent() {
           {PROJECTS.map((p) => (
             <div
               key={p.id}
-              onClick={() => { setSelected(p.id); setActiveShot(0); }}
+              onClick={() => { window.umami?.track("view_project", { name: p.id }); setSelected(p.id); setActiveShot(0); }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -278,6 +282,7 @@ export default function ProjectsContent() {
                 href={project.link}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => window.umami?.track("click_github", { project: project.id })}
                 style={{ fontSize: "8px", color: "#000080" }}
               >
                 View on GitHub ↗
@@ -311,7 +316,7 @@ export default function ProjectsContent() {
                     marginBottom: "4px",
                     cursor: "zoom-in",
                   }}
-                  onClick={() => setLightboxOpen(true)}
+                  onClick={() => { window.umami?.track("open_lightbox", { project: project.id, screenshot: current.caption }); setLightboxOpen(true); }}
                 >
                   <Image
                     src={current.src}
@@ -324,7 +329,7 @@ export default function ProjectsContent() {
                   {/* Prev / Next arrows */}
                   {activeShot > 0 && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); setActiveShot((i) => i - 1); }}
+                      onClick={(e) => { e.stopPropagation(); window.umami?.track("screenshot_prev", { project: project.id }); setActiveShot((i) => i - 1); }}
                       style={{
                         position: "absolute", left: 4, top: "50%",
                         transform: "translateY(-50%)",
@@ -336,7 +341,7 @@ export default function ProjectsContent() {
                   )}
                   {activeShot < shots.length - 1 && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); setActiveShot((i) => i + 1); }}
+                      onClick={(e) => { e.stopPropagation(); window.umami?.track("screenshot_next", { project: project.id }); setActiveShot((i) => i + 1); }}
                       style={{
                         position: "absolute", right: 4, top: "50%",
                         transform: "translateY(-50%)",
@@ -361,7 +366,7 @@ export default function ProjectsContent() {
                   {shots.map((s, i) => (
                     <div
                       key={s.src}
-                      onClick={() => setActiveShot(i)}
+                      onClick={() => { window.umami?.track("click_thumbnail", { project: project.id, index: i }); setActiveShot(i); }}
                       style={{
                         position: "relative",
                         flex: 1,
@@ -452,7 +457,7 @@ export default function ProjectsContent() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                 <button
                   style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
-                  onClick={() => setActiveShot((i) => Math.max(i - 1, 0))}
+                  onClick={() => { window.umami?.track("lightbox_prev", { project: project.id }); setActiveShot((i) => Math.max(i - 1, 0)); }}
                   disabled={activeShot === 0}
                 >⬅︎ Prev</button>
                 <span style={{ fontSize: "8px", color: "#808080" }}>
@@ -460,7 +465,7 @@ export default function ProjectsContent() {
                 </span>
                 <button
                   style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
-                  onClick={() => setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1))}
+                  onClick={() => { window.umami?.track("lightbox_next", { project: project.id }); setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1)); }}
                   disabled={activeShot === project.screenshots.length - 1}
                 >Next ➡︎</button>
               </div>

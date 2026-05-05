@@ -84,14 +84,14 @@ export default function CVContent() {
         {(Object.keys(TAB_LABELS) as Tab[]).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { window.umami?.track("view_cv_tab", { tab }); setActiveTab(tab); }}
             style={{ fontSize: "9px", fontWeight: activeTab === tab ? "bold" : "normal" }}
           >
             {TAB_LABELS[tab]}
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        <a href="/file/Attidmese_Bunsua_CV.docx" download style={{ textDecoration: "none" }}>
+        <a href="/file/Attidmese_Bunsua_CV.docx" download onClick={() => window.umami?.track("download_cv")} style={{ textDecoration: "none" }}>
           <button style={{ fontSize: "9px" }}>Save As...</button>
         </a>
       </div>

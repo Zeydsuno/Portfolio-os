@@ -138,6 +138,7 @@ export default function SnakeGame() {
 
   const triggerGameOver = useCallback(() => {
     playSnakeDie();
+    window.umami?.track("game_over", { game: "snake", score: scoreRef.current, new_highscore: scoreRef.current > highScoreRef.current });
     if (scoreRef.current > highScoreRef.current) {
       highScoreRef.current = scoreRef.current;
       setHighScore(highScoreRef.current);

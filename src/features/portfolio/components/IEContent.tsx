@@ -35,7 +35,7 @@ export default function IEContent() {
 
   function navigate() {
     const idx = PAGES.findIndex((p) => p.url === addressBar);
-    if (idx !== -1) setPageIdx(idx);
+    if (idx !== -1) { window.umami?.track("ie_navigate", { page: PAGES[idx].label }); setPageIdx(idx); }
   }
 
   return (
@@ -55,14 +55,14 @@ export default function IEContent() {
           <button
             style={{ fontSize: "7px", padding: "1px 6px" }}
             disabled={pageIdx === 0}
-            onClick={() => setPageIdx((p) => Math.max(0, p - 1))}
+            onClick={() => { const next = Math.max(0, pageIdx - 1); window.umami?.track("ie_navigate", { page: PAGES[next].label }); setPageIdx(next); }}
           >◀ Back</button>
           <button
             style={{ fontSize: "7px", padding: "1px 6px" }}
             disabled={pageIdx === PAGES.length - 1}
-            onClick={() => setPageIdx((p) => Math.min(PAGES.length - 1, p + 1))}
+            onClick={() => { const next = Math.min(PAGES.length - 1, pageIdx + 1); window.umami?.track("ie_navigate", { page: PAGES[next].label }); setPageIdx(next); }}
           >Fwd ▶</button>
-          <button style={{ fontSize: "7px", padding: "1px 6px" }} onClick={() => setPageIdx(0)}>
+          <button style={{ fontSize: "7px", padding: "1px 6px" }} onClick={() => { window.umami?.track("ie_navigate", { page: PAGES[0].label }); setPageIdx(0); }}>
             🏠
           </button>
           <div style={{ width: "1px", height: "16px", background: "#808080", margin: "0 2px" }} />
@@ -145,6 +145,7 @@ function GithubPage() {
         );
         return r.url ? (
           <a key={r.name} href={r.url} target="_blank" rel="noreferrer"
+            onClick={() => window.umami?.track("ie_click_repo", { name: r.name })}
             style={{ display: "block", marginBottom: "8px", padding: "6px", border: "1px solid #ddd", borderRadius: "4px", textDecoration: "none" }}>
             {inner}
           </a>
@@ -159,6 +160,7 @@ function GithubPage() {
           href="https://github.com/Zeydsuno"
           target="_blank"
           rel="noreferrer"
+          onClick={() => window.umami?.track("click_social", { platform: "github", source: "ie" })}
           style={{ color: "#0000EE", fontSize: "11px" }}
         >
           → View full profile on GitHub ↗
@@ -201,6 +203,7 @@ function LinkedInPage() {
           href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b"
           target="_blank"
           rel="noreferrer"
+          onClick={() => window.umami?.track("click_social", { platform: "linkedin", source: "ie" })}
           style={{ color: "#0000EE", fontSize: "11px" }}
         >
           → View full profile on LinkedIn ↗
@@ -266,8 +269,8 @@ function PortfolioPage() {
 
       {/* Links */}
       <div style={{ display: "flex", gap: "16px", fontSize: "11px" }}>
-        <a href="https://github.com/Zeydsuno" target="_blank" rel="noreferrer" style={{ color: "#0000EE" }}>🐙 GitHub ↗</a>
-        <a href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b" target="_blank" rel="noreferrer" style={{ color: "#0000EE" }}>💼 LinkedIn ↗</a>
+        <a href="https://github.com/Zeydsuno" target="_blank" rel="noreferrer" onClick={() => window.umami?.track("click_social", { platform: "github", source: "ie" })} style={{ color: "#0000EE" }}>🐙 GitHub ↗</a>
+        <a href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b" target="_blank" rel="noreferrer" onClick={() => window.umami?.track("click_social", { platform: "linkedin", source: "ie" })} style={{ color: "#0000EE" }}>💼 LinkedIn ↗</a>
       </div>
     </div>
   );

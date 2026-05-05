@@ -359,6 +359,7 @@ export default function DinoGame() {
           hitY < GROUND_Y         &&
           hitY + hitH > GROUND_Y - dim.h + 2
         ) {
+          window.umami?.track("game_over", { game: "dino", score: Math.floor(scoreRef.current), new_highscore: scoreRef.current > hiRef.current });
           if (scoreRef.current > hiRef.current) { hiRef.current = Math.floor(scoreRef.current); localStorage.setItem("dino_high_score", String(hiRef.current)); }
           statusRef.current = "gameover";
           playDinoDie();
@@ -374,6 +375,7 @@ export default function DinoGame() {
           hitY < p.y + PTERO_H - 4  &&
           hitY + hitH > p.y + 4
         ) {
+          window.umami?.track("game_over", { game: "dino", score: Math.floor(scoreRef.current), new_highscore: scoreRef.current > hiRef.current });
           if (scoreRef.current > hiRef.current) { hiRef.current = Math.floor(scoreRef.current); localStorage.setItem("dino_high_score", String(hiRef.current)); }
           statusRef.current = "gameover";
           playDinoDie();

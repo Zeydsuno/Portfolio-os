@@ -233,6 +233,7 @@ export default function Minesweeper() {
 
       if (cell.isMine) {
         setBoard(revealAllMines(board));
+        window.umami?.track("game_over", { game: "minesweeper", result: "lost" });
         setGameStatus("lost");
         return;
       }
@@ -240,6 +241,7 @@ export default function Minesweeper() {
       const newBoard = revealCell(board, r, c);
       setBoard(newBoard);
       if (checkWin(newBoard)) {
+        window.umami?.track("game_over", { game: "minesweeper", result: "won", time: timer });
         setGameStatus("won");
         if (bestTime === 0 || timer < bestTime) {
           setBestTime(timer);
@@ -247,7 +249,7 @@ export default function Minesweeper() {
         }
       }
     },
-    [board, gameStatus, flagMode, startTimer]
+    [board, gameStatus, flagMode, startTimer, timer, bestTime]
   );
 
   const handleRightClick = useCallback(

@@ -34,13 +34,13 @@ export default function ReadmeContent() {
       <hr style={{ margin: "12px 0" }} />
       <p style={{ marginBottom: "4px" }}>
         <strong>GitHub:</strong>{" "}
-        <a href="https://github.com/Zeydsuno" target="_blank" rel="noreferrer">
+        <a href="https://github.com/Zeydsuno" target="_blank" rel="noreferrer" onClick={() => window.umami?.track("click_social", { platform: "github" })}>
           github.com/Zeydsuno
         </a>
       </p>
       <p>
         <strong>LinkedIn:</strong>{" "}
-        <a href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b" target="_blank" rel="noreferrer">
+        <a href="https://www.linkedin.com/in/attidmese-bunsua-a7952623b" target="_blank" rel="noreferrer" onClick={() => window.umami?.track("click_social", { platform: "linkedin" })}>
           Attidmese Bunsua
         </a>
       </p>

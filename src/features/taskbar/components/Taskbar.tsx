@@ -249,7 +249,7 @@ export default function Taskbar() {
     {
       kind: "action",
       label: "Shut Down...",
-      action: () => setShowShutdown(true),
+      action: () => { window.umami?.track("open_shutdown"); setShowShutdown(true); },
     },
   ];
 
@@ -365,7 +365,7 @@ export default function Taskbar() {
         }}>
           {/* Start Button */}
           <button
-            onClick={() => setStartOpen((p) => !p)}
+            onClick={() => { if (!startOpen) window.umami?.track("click_start"); setStartOpen((p) => !p); }}
             style={{
               ...FONT,
               fontSize: "10px",
@@ -434,10 +434,10 @@ export default function Taskbar() {
             {!lastVisit && (
               <TrayIcon label="Welcome! First visit 🎉">👤</TrayIcon>
             )}
-            <TrayIcon label={muted ? "Volume: Muted (click to unmute)" : "Volume: 100% (click to mute)"} onClick={toggleMute}>
+            <TrayIcon label={muted ? "Volume: Muted (click to unmute)" : "Volume: 100% (click to mute)"} onClick={() => { window.umami?.track("toggle_mute", { muted: !muted }); toggleMute(); }}>
               {muted ? "🔇" : "🔊"}
             </TrayIcon>
-            <TrayIcon label="Display Properties" onClick={() => setShowDisplayProps(true)}>🖥️</TrayIcon>
+            <TrayIcon label="Display Properties" onClick={() => { window.umami?.track("open_properties", { source: "tray" }); setShowDisplayProps(true); }}>🖥️</TrayIcon>
             <div style={{
               width: "1px",
               height: "16px",

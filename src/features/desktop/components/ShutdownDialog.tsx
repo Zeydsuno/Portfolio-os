@@ -14,6 +14,7 @@ export default function ShutdownDialog({ onClose, onBSOD }: ShutdownDialogProps)
   const [turningOff, setTurningOff] = useState(false);
 
   const handleOk = () => {
+    window.umami?.track("shutdown_confirm", { option: selected });
     if (selected === "shutdown") {
       setTurningOff(true);
       setTimeout(() => window.location.reload(), 2500);

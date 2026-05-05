@@ -21,7 +21,7 @@ export default function MailContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, subject, message: body, website: honeypot }),
       });
-      setStatus(res.ok ? "sent" : "error");
+      if (res.ok) { window.umami?.track("contact_sent"); setStatus("sent"); } else { setStatus("error"); }
     } catch {
       setStatus("error");
     }
