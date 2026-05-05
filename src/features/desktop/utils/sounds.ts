@@ -107,6 +107,29 @@ export function playDinoPoint() {
   tone(ac, 1100, 0.03, 0.05, 0.05, "square");
 }
 
+/** Dynamic 8-bit BGM step tied to game speed */
+export function playDinoBgmStep(beatIndex: number) {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+
+  const step = beatIndex % 8;
+  
+  // Bass line notes (Square wave for retro feel)
+  // A2 (110), C3 (130.81), G2 (98)
+  const bassNotes = [110, 0, 110, 0, 130.81, 0, 98, 0];
+  const freq = bassNotes[step];
+  
+  if (freq > 0) {
+    tone(ac, freq, 0, 0.08, 0.08, "square"); // Snappy bass
+  }
+  
+  // Hi-hats on off-beats (Triangle wave, very short decay for a percussive 'ts')
+  if (step % 2 === 1) {
+    tone(ac, 800, 0, 0.02, 0.02, "triangle");
+  }
+}
+
 // ── Snake game sounds ─────────────────────────────────────────────────────────
 
 /** High-pitched blip when snake eats food */
