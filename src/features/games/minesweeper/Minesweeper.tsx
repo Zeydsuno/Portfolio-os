@@ -16,6 +16,33 @@ interface Cell {
 
 type GameStatus = "playing" | "won" | "lost";
 
+function FlagIcon() {
+  return (
+    <svg width="13" height="15" viewBox="0 0 13 15" xmlns="http://www.w3.org/2000/svg">
+      <rect x="5" y="0" width="2" height="14" fill="#000" />
+      <polygon points="7,0 7,7 13,3.5" fill="#cc0000" />
+      <rect x="2" y="13" width="9" height="2" fill="#000" />
+    </svg>
+  );
+}
+
+function MineIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="7" cy="7" r="4" fill="#000" />
+      {[0, 45, 90, 135].map(deg => {
+        const rad = (deg * Math.PI) / 180;
+        const x1 = 7 + Math.cos(rad) * 4;
+        const y1 = 7 + Math.sin(rad) * 4;
+        const x2 = 7 + Math.cos(rad) * 7;
+        const y2 = 7 + Math.sin(rad) * 7;
+        return <line key={deg} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#000" strokeWidth="1.5" />;
+      })}
+      <circle cx="5.5" cy="5.5" r="1" fill="#fff" />
+    </svg>
+  );
+}
+
 // Classic Minesweeper number colors
 const NUMBER_COLORS: Record<number, string> = {
   1: "#0000ff",
@@ -122,7 +149,13 @@ export default function Minesweeper() {
   const [board, setBoard] = useState(createBoard);
   const [gameStatus, setGameStatus] = useState<GameStatus>("playing");
   const [timer, setTimer] = useState(0);
+  const [bestTime, setBestTime] = useState(() =>
+    typeof window !== "undefined"
+      ? parseInt(localStorage.getItem("minesweeper_best_time") ?? "0", 10)
+      : 0
+  );
   const [flagMode, setFlagMode] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const startedRef = useRef(false);
@@ -208,6 +241,10 @@ export default function Minesweeper() {
       setBoard(newBoard);
       if (checkWin(newBoard)) {
         setGameStatus("won");
+        if (bestTime === 0 || timer < bestTime) {
+          setBestTime(timer);
+          localStorage.setItem("minesweeper_best_time", String(timer));
+        }
       }
     },
     [board, gameStatus, flagMode, startTimer]
@@ -255,29 +292,34 @@ export default function Minesweeper() {
         >
           {String(MINE_COUNT - flagCount).padStart(3, "0")}
         </span>
-        <button
-          onClick={resetGame}
-          style={{
-            fontSize: "16px",
-            padding: "2px 6px",
-            cursor: "pointer",
-          }}
-        >
-          {smiley}
-        </button>
-        <span
-          style={{
-            fontFamily: "'Press Start 2P', cursive",
-            fontSize: "12px",
-            color: "#ff0000",
-            background: "#000",
-            padding: "2px 4px",
-            minWidth: "40px",
-            textAlign: "center",
-          }}
-        >
-          {String(Math.min(timer, 999)).padStart(3, "0")}
-        </span>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button onClick={resetGame} style={{ fontSize: "16px", padding: "2px 6px", cursor: "pointer" }}>
+            {smiley}
+          </button>
+          <button onClick={() => setShowHelp(true)} style={{ fontSize: "11px", padding: "2px 5px", cursor: "pointer", fontFamily: "Tahoma, sans-serif" }}>
+            ?
+          </button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+          <span
+            style={{
+              fontFamily: "'Press Start 2P', cursive",
+              fontSize: "12px",
+              color: "#ff0000",
+              background: "#000",
+              padding: "2px 4px",
+              minWidth: "40px",
+              textAlign: "center",
+            }}
+          >
+            {String(Math.min(timer, 999)).padStart(3, "0")}
+          </span>
+          {bestTime > 0 && (
+            <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "6px", color: "#555", whiteSpace: "nowrap" }}>
+              best {String(bestTime).padStart(3, "0")}s
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Mode toggle — mobile only */}
@@ -346,18 +388,65 @@ export default function Minesweeper() {
               >
                 {cell.revealed
                   ? cell.isMine
-                    ? "*"
+                    ? <MineIcon />
                     : cell.adjacentMines > 0
                       ? cell.adjacentMines
                       : ""
                   : cell.flagged
-                    ? "F"
+                    ? <FlagIcon />
                     : ""}
               </button>
             ))
           )}
         </div>
       </div>
+
+      {/* Help overlay */}
+      {showHelp && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300 }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div className="window" style={{ minWidth: 260, maxWidth: 320 }} onClick={e => e.stopPropagation()}>
+            <div className="title-bar">
+              <div className="title-bar-text">Minesweeper — How to Play</div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={() => setShowHelp(false)} />
+              </div>
+            </div>
+            <div className="window-body" style={{ padding: "12px 16px", fontSize: 11, lineHeight: 1.8 }}>
+              <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>Controls</p>
+              <div style={{ display: "flex", gap: 12, margin: "0 0 12px" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, marginBottom: 2 }}>🖱️</div>
+                  <div style={{ fontSize: 9 }}>Left click</div>
+                  <div style={{ fontSize: 9, color: "#555" }}>Reveal cell</div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 20, marginBottom: 2 }}>🚩</div>
+                  <div style={{ fontSize: 9 }}>Right click</div>
+                  <div style={{ fontSize: 9, color: "#555" }}>Flag mine</div>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>Reading the numbers</p>
+              {/* Mini grid example */}
+              <div style={{ display: "inline-grid", gridTemplateColumns: "repeat(4, 26px)", gap: 2, margin: "0 0 8px", fontFamily: "monospace", fontSize: 12 }}>
+                {[
+                  { v: "1", c: "#0000cc" }, { v: "1", c: "#0000cc" }, { v: "1", c: "#0000cc" }, { v: " ", c: "#000" },
+                  { v: "1", c: "#0000cc" }, { v: "🚩", c: "#000" }, { v: "1", c: "#0000cc" }, { v: " ", c: "#000" },
+                  { v: "1", c: "#0000cc" }, { v: "1", c: "#0000cc" }, { v: "1", c: "#0000cc" }, { v: " ", c: "#000" },
+                ].map((cell, i) => (
+                  <div key={i} style={{ width: 26, height: 26, border: "1px solid #808080", background: "#c0c0c0", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: cell.c }}>
+                    {cell.v}
+                  </div>
+                ))}
+              </div>
+              <p style={{ margin: "0 0 4px" }}>• Each number = mines touching that cell</p>
+              <p style={{ margin: 0 }}>• Reveal all safe cells to <strong>win</strong> 🎉</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

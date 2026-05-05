@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { playDinoJump, playDinoDie, playDinoPoint } from "@/features/desktop/utils/sounds";
 
 const CANVAS_W = 560;
@@ -118,6 +118,7 @@ function drawCactus(ctx: CanvasRenderingContext2D, c: Cactus) {
 
 export default function DinoGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const statusRef   = useRef<Status>("waiting");
   const dinoYRef    = useRef(GROUND_Y - DINO_H);
@@ -130,7 +131,11 @@ export default function DinoGame() {
   const cactiRef        = useRef<Cactus[]>([]);
   const pterosRef       = useRef<Pterodactyl[]>([]);
   const scoreRef        = useRef(0);
-  const hiRef           = useRef(0);
+  const hiRef           = useRef(
+    typeof window !== "undefined"
+      ? parseInt(localStorage.getItem("dino_high_score") ?? "0", 10)
+      : 0
+  );
   const speedRef        = useRef(BASE_SPEED);
   const animFrameRef    = useRef(0);
   const gndOffRef       = useRef(0);
@@ -354,7 +359,7 @@ export default function DinoGame() {
           hitY < GROUND_Y         &&
           hitY + hitH > GROUND_Y - dim.h + 2
         ) {
-          if (scoreRef.current > hiRef.current) hiRef.current = Math.floor(scoreRef.current);
+          if (scoreRef.current > hiRef.current) { hiRef.current = Math.floor(scoreRef.current); localStorage.setItem("dino_high_score", String(hiRef.current)); }
           statusRef.current = "gameover";
           playDinoDie();
           break;
@@ -369,7 +374,7 @@ export default function DinoGame() {
           hitY < p.y + PTERO_H - 4  &&
           hitY + hitH > p.y + 4
         ) {
-          if (scoreRef.current > hiRef.current) hiRef.current = Math.floor(scoreRef.current);
+          if (scoreRef.current > hiRef.current) { hiRef.current = Math.floor(scoreRef.current); localStorage.setItem("dino_high_score", String(hiRef.current)); }
           statusRef.current = "gameover";
           playDinoDie();
           break;
@@ -443,20 +448,76 @@ export default function DinoGame() {
           />
         </div>
       </div>
-      <div className="flex md:hidden gap-3 mt-3 shrink-0">
+      <div className="flex gap-3 mt-3 shrink-0 justify-center">
         <button
+          className="flex md:hidden"
           style={btnStyle}
           onPointerDown={() => setDuck(true)}
           onPointerUp={() => setDuck(false)}
           onPointerLeave={() => setDuck(false)}
         >⬇ DUCK</button>
         <button
+          className="flex md:hidden"
           style={btnStyle}
           onPointerDown={(e) => jump(e.timeStamp)}
           onPointerUp={releaseJump}
           onPointerLeave={releaseJump}
         >⬆ JUMP</button>
+        <button
+          style={{ ...btnStyle, padding: "10px 14px" }}
+          onClick={() => setShowHelp(true)}
+        >?</button>
       </div>
+
+      {/* Help overlay */}
+      {showHelp && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300 }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div className="window" style={{ minWidth: 260, maxWidth: 310 }} onClick={e => e.stopPropagation()}>
+            <div className="title-bar">
+              <div className="title-bar-text">Dino — How to Play</div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={() => setShowHelp(false)} />
+              </div>
+            </div>
+            <div className="window-body" style={{ padding: "12px 16px", fontSize: 11, lineHeight: 1.8 }}>
+              <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>Controls</p>
+              <div style={{ display: "flex", gap: 16, margin: "0 0 12px" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <div style={{ border: "2px solid #808080", background: "#c0c0c0", padding: "2px 8px", borderRadius: 2, fontSize: 9, boxShadow: "1px 1px 0 #fff inset" }}>SPACE</div>
+                    <div style={{ fontSize: 9, color: "#555" }}>Jump</div>
+                    <div style={{ fontSize: 9, color: "#555" }}>Hold = higher</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <div style={{ border: "2px solid #808080", background: "#c0c0c0", width: 26, height: 26, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, boxShadow: "1px 1px 0 #fff inset" }}>▼</div>
+                    <div style={{ fontSize: 9, color: "#555" }}>Duck</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 9, color: "#555", paddingTop: 2 }}>
+                  <div>Mobile:</div>
+                  <div>tap = jump</div>
+                  <div>DUCK button</div>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>Obstacles</p>
+              <div style={{ display: "flex", gap: 12, margin: "0 0 4px", alignItems: "center" }}>
+                <span style={{ fontSize: 18 }}>🌵</span>
+                <span>Cactus — <strong>jump over</strong></span>
+              </div>
+              <div style={{ display: "flex", gap: 12, margin: "0 0 10px", alignItems: "center" }}>
+                <span style={{ fontSize: 18 }}>🐛</span>
+                <span>Flying bug — <strong>jump or duck</strong></span>
+              </div>
+              <p style={{ margin: 0 }}>• Every 500 pts the game speeds up</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

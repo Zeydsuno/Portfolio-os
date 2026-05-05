@@ -34,7 +34,12 @@ function spawnFood(snake: Point[]): Point {
 export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
+  const [showHelp, setShowHelp] = useState(false);
+  const [highScore, setHighScore] = useState(() =>
+    typeof window !== "undefined"
+      ? parseInt(localStorage.getItem("snake_high_score") ?? "0", 10)
+      : 0
+  );
   const [status, setStatus] = useState<GameStatus>("waiting");
   const [popups, setPopups] = useState<{ id: number; x: number; y: number; text: string; color: string }[]>([]);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -47,7 +52,11 @@ export default function SnakeGame() {
   const goldenFoodRef = useRef<{ x: number; y: number; timer: number } | null>(null);
   const popupIdRef = useRef(0);
   const scoreRef = useRef(0);
-  const highScoreRef = useRef(0);
+  const highScoreRef = useRef(
+    typeof window !== "undefined"
+      ? parseInt(localStorage.getItem("snake_high_score") ?? "0", 10)
+      : 0
+  );
   const statusRef = useRef<GameStatus>("waiting");
   const speedRef = useRef(TICK_MS);
   const loopRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -132,6 +141,7 @@ export default function SnakeGame() {
     if (scoreRef.current > highScoreRef.current) {
       highScoreRef.current = scoreRef.current;
       setHighScore(highScoreRef.current);
+      localStorage.setItem("snake_high_score", String(highScoreRef.current));
     }
     statusRef.current = "gameover";
     setStatus("gameover");
@@ -383,7 +393,53 @@ export default function SnakeGame() {
             <><span className="md:hidden">Tap to retry</span><span className="hidden md:inline">Press Enter to retry</span></>
           )}
         </p>
+        <p className="status-bar-field" style={{ cursor: "pointer", userSelect: "none" }} onClick={() => setShowHelp(true)}>?</p>
       </div>
+
+      {/* Help overlay */}
+      {showHelp && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300 }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div className="window" style={{ minWidth: 260, maxWidth: 310 }} onClick={e => e.stopPropagation()}>
+            <div className="title-bar">
+              <div className="title-bar-text">Snake — How to Play</div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={() => setShowHelp(false)} />
+              </div>
+            </div>
+            <div className="window-body" style={{ padding: "12px 16px", fontSize: 11, lineHeight: 1.8 }}>
+              <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>Controls</p>
+              <div style={{ display: "flex", gap: 16, margin: "0 0 12px", alignItems: "flex-start" }}>
+                <div>
+                  {/* Arrow key visual */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 26px)", gridTemplateRows: "repeat(2, 26px)", gap: 2, marginBottom: 4 }}>
+                    {["", "▲", "", "◀", "▼", "▶"].map((k, i) => (
+                      <div key={i} style={{ width: 26, height: 26, border: k ? "2px solid #808080" : "none", background: k ? "#c0c0c0" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, borderRadius: 2, boxShadow: k ? "1px 1px 0 #fff inset" : "none" }}>{k}</div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 9, color: "#555", textAlign: "center" }}>Arrow keys</div>
+                </div>
+                <div style={{ fontSize: 11, paddingTop: 4 }}>
+                  <div>or <strong>W A S D</strong></div>
+                  <div style={{ fontSize: 9, color: "#555", marginTop: 2 }}>Mobile: swipe</div>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>Scoring</p>
+              <div style={{ display: "flex", gap: 12, margin: "0 0 4px", alignItems: "center" }}>
+                <span style={{ fontSize: 18 }}>🍎</span>
+                <span>Normal apple — <strong>+10 pt</strong></span>
+              </div>
+              <div style={{ display: "flex", gap: 12, margin: "0 0 10px", alignItems: "center" }}>
+                <span style={{ fontSize: 18 }}>✨</span>
+                <span>Golden apple — <strong>+50 pts</strong>, limited time</span>
+              </div>
+              <p style={{ margin: 0 }}>• Don&apos;t hit the walls or your own tail</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* You Lose popup — Win98 dialog style */}
       {status === "gameover" && (

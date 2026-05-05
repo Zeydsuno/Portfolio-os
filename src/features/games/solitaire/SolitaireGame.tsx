@@ -138,6 +138,27 @@ function placeOnTableauCol(state: GameState, cards: Card[], colIdx: number): Gam
   return { ...state, tableau: newT, moves: state.moves + 1 };
 }
 
+function MiniCard({ label, suit }: { label: string; suit: Suit }) {
+  const isRed = RED.has(suit);
+  return (
+    <div style={{
+      width: 28, height: 38,
+      border: "1px solid #808080",
+      borderRadius: 2,
+      background: "#fff",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      fontSize: 9, lineHeight: 1, color: isRed ? "#cc0000" : "#000",
+      fontFamily: "Tahoma, sans-serif",
+      fontWeight: "bold",
+      flexShrink: 0,
+    }}>
+      <div>{label}</div>
+      <div>{SUIT_SYM[suit]}</div>
+    </div>
+  );
+}
+
 // ─── Card view ────────────────────────────────────────────────────────────────
 
 interface CardProps {
@@ -212,6 +233,7 @@ function EmptySlot({ label, style }: { label?: string; style?: React.CSSProperti
 export default function SolitaireGame() {
   const [game, setGame] = useState<GameState>(initGame);
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Refs for hit testing
   const wasteRef = useRef<HTMLDivElement>(null);
@@ -250,8 +272,9 @@ export default function SolitaireGame() {
       setDrag(null);
       if (!drag) return;
 
-      const cx = e.clientX;
-      const cy = e.clientY;
+      // Use ghost card center for hit detection so the card lands where it visually appears
+      const cx = e.clientX - drag.offsetX + CARD_W / 2;
+      const cy = e.clientY - drag.offsetY + CARD_H / 2;
 
       const hit = (el: HTMLElement | null): boolean => {
         if (!el) return false;
@@ -477,14 +500,71 @@ export default function SolitaireGame() {
       {/* Status bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ ...FONT, fontSize: 7, color: "#c8ffc8" }}>Moves: {game.moves}</span>
-        <button
-          onClick={() => setGame(initGame())}
-          style={{ ...FONT, fontSize: 7, padding: "3px 8px", cursor: "pointer", border: "2px solid", borderColor: "#fff #808080 #808080 #fff", background: "#c0c0c0" }}
-        >
-          New Game
-        </button>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button
+            onClick={() => setShowHelp(true)}
+            style={{ ...FONT, fontSize: 7, padding: "3px 8px", cursor: "pointer", border: "2px solid", borderColor: "#fff #808080 #808080 #fff", background: "#c0c0c0" }}
+          >?</button>
+          <button
+            onClick={() => setGame(initGame())}
+            style={{ ...FONT, fontSize: 7, padding: "3px 8px", cursor: "pointer", border: "2px solid", borderColor: "#fff #808080 #808080 #fff", background: "#c0c0c0" }}
+          >New Game</button>
+        </div>
         <span style={{ ...FONT, fontSize: 7, color: "#c8ffc8" }}>Stock: {game.stock.length}</span>
       </div>
+
+      {/* Help overlay */}
+      {showHelp && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300 }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div className="window" style={{ minWidth: 260, maxWidth: 310 }} onClick={e => e.stopPropagation()}>
+            <div className="title-bar">
+              <div className="title-bar-text">Solitaire — How to Play</div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={() => setShowHelp(false)} />
+              </div>
+            </div>
+            <div className="window-body" style={{ padding: "12px 16px", fontSize: 11, lineHeight: 1.8 }}>
+              <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Tableau — alternating colors, descending</p>
+              {/* Visual: valid vs invalid stack */}
+              <div style={{ display: "flex", gap: 16, margin: "0 0 10px", alignItems: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                  <MiniCard label="Q" suit="spades" />
+                  <MiniCard label="J" suit="hearts" />
+                  <span style={{ fontSize: 9, color: "#006600" }}>✓ valid</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                  <MiniCard label="Q" suit="spades" />
+                  <MiniCard label="J" suit="clubs" />
+                  <span style={{ fontSize: 9, color: "#cc0000" }}>✗ same color</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                  <MiniCard label="Q" suit="spades" />
+                  <MiniCard label="10" suit="hearts" />
+                  <span style={{ fontSize: 9, color: "#cc0000" }}>✗ skip rank</span>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 4px" }}>• Empty column → <strong>King only</strong></p>
+              <p style={{ margin: "0 0 10px" }}>• Drag an entire sequence at once</p>
+
+              <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Foundation (top-right) — build A→K per suit</p>
+              <div style={{ display: "flex", gap: 4, margin: "0 0 10px", alignItems: "center" }}>
+                {(["A","2","3","…","K"] as const).map((v, i) => (
+                  <span key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                    <MiniCard label={v} suit="hearts" />
+                  </span>
+                ))}
+              </div>
+              <p style={{ margin: "0 0 10px" }}>• <strong>Double-click</strong> any card to auto-send to foundation</p>
+
+              <p style={{ margin: "0 0 4px", fontWeight: "bold" }}>Stock (top-left)</p>
+              <p style={{ margin: 0 }}>• Click to draw a card &nbsp;•&nbsp; Click <strong>↺</strong> to reset pile</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
