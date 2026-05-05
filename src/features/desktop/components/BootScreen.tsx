@@ -76,7 +76,7 @@ export default function BootScreen({ onComplete }: BootScreenProps) {
             marginTop: "10px",
           }}
         >
-          Second Edition
+          First Edition
         </div>
       </div>
 

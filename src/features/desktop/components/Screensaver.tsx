@@ -26,15 +26,21 @@ export default function Screensaver({ onDismiss }: ScreensaverProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
     const ctx = canvas.getContext("2d")!;
+    ctx.scale(dpr, dpr);
 
     const particles: Particle[] = Array.from({ length: 6 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 1.5),
-      vy: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random() * 1.5),
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() > 0.5 ? 1 : -1) * (0.4 + Math.random() * 0.4),
+      vy: (Math.random() > 0.5 ? 1 : -1) * (0.4 + Math.random() * 0.4),
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
     }));
 
@@ -53,9 +59,9 @@ export default function Screensaver({ onDismiss }: ScreensaverProps) {
 
         let bounced = false;
         if (p.x < 20) { p.x = 20; p.vx = Math.abs(p.vx); bounced = true; }
-        if (p.x > canvas.width - 120) { p.x = canvas.width - 120; p.vx = -Math.abs(p.vx); bounced = true; }
+        if (p.x > w - 120) { p.x = w - 120; p.vx = -Math.abs(p.vx); bounced = true; }
         if (p.y < 16) { p.y = 16; p.vy = Math.abs(p.vy); bounced = true; }
-        if (p.y > canvas.height - 16) { p.y = canvas.height - 16; p.vy = -Math.abs(p.vy); bounced = true; }
+        if (p.y > h - 16) { p.y = h - 16; p.vy = -Math.abs(p.vy); bounced = true; }
         if (bounced) p.color = COLORS[Math.floor(Math.random() * COLORS.length)];
 
         ctx.font = "bold 16px 'Press Start 2P', monospace";
