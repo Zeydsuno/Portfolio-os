@@ -76,3 +76,33 @@ export function playWindowClose() {
   tone(ac, 660, 0.00, 0.08, 0.09, "square");
   tone(ac, 523, 0.07, 0.12, 0.07, "square");
 }
+
+// ── Dino game sounds ──────────────────────────────────────────────────────────
+
+/** Quick upward chirp when the dino jumps */
+export function playDinoJump() {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  tone(ac, 440, 0.00, 0.06, 0.08, "square");
+  tone(ac, 600, 0.05, 0.08, 0.06, "square");
+}
+
+/** Descending crash sound on death */
+export function playDinoDie() {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  tone(ac, 300, 0.00, 0.12, 0.20, "sawtooth");
+  tone(ac, 200, 0.10, 0.15, 0.18, "sawtooth");
+  tone(ac, 120, 0.22, 0.20, 0.15, "sawtooth");
+}
+
+/** Short blip for reaching a score milestone */
+export function playDinoPoint() {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  tone(ac, 880, 0.00, 0.04, 0.06, "square");
+  tone(ac, 1100, 0.03, 0.05, 0.05, "square");
+}

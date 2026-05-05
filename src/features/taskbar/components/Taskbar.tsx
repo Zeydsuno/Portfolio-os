@@ -16,6 +16,7 @@ const FONT: React.CSSProperties = {
 /** Scales SVG to 16×16 for taskbar/menu use */
 function SmallIcon({ svg }: { svg: string }) {
   return (
+    /* eslint-disable-next-line @next/next/no-img-element */
     <img
       src={`data:image/svg+xml;base64,${btoa(svg)}`}
       width={16}

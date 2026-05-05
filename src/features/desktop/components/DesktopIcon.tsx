@@ -146,14 +146,21 @@ export default function DesktopIcon({ icon, onIconContextMenu }: DesktopIconProp
           outlineOffset: "2px",
         }}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`data:image/svg+xml;base64,${btoa((icon.iconFull && recycleBinFull) ? icon.iconFull : icon.icon)}`}
+          src={
+            icon.photoIcon
+              ? icon.photoIcon
+              : `data:image/svg+xml;base64,${btoa((icon.iconFull && recycleBinFull) ? icon.iconFull : icon.icon)}`
+          }
           width={48}
           height={48}
           alt={icon.label}
           draggable="false"
           style={{
-            imageRendering: "pixelated",
+            imageRendering: icon.photoIcon ? "auto" : "pixelated",
+            objectFit: "cover",
+            borderRadius: icon.photoIcon ? "4px" : "0",
             filter: isSelected
               ? "brightness(0.6) sepia(1) hue-rotate(180deg) saturate(3)"
               : "none",

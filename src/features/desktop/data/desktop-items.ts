@@ -120,6 +120,23 @@ const ICON_CALC = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" w
   <rect x="12" y="13" width="2" height="2" fill="#000080"/>
 </svg>`;
 
+const ICON_DINO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <rect x="1" y="1" width="14" height="14" fill="#d0e8c8" stroke="#000" stroke-width="1"/>
+  <rect x="1" y="12" width="14" height="1" fill="#555"/>
+  <rect x="10" y="8" width="2" height="4" fill="#2d6b1a"/>
+  <rect x="9" y="9" width="1" height="2" fill="#2d6b1a"/>
+  <rect x="12" y="10" width="1" height="2" fill="#2d6b1a"/>
+  <rect x="3" y="5" width="4" height="2" fill="#800000"/>
+  <rect x="4" y="4" width="2" height="1" fill="#800000"/>
+  <rect x="4" y="6" width="3" height="2" fill="#ffcc99"/>
+  <rect x="5" y="6" width="1" height="1" fill="#000"/>
+  <rect x="4" y="8" width="3" height="2" fill="#336699"/>
+  <rect x="5" y="9" width="1" height="1" fill="#ffcc99"/>
+  <rect x="4" y="10" width="1" height="2" fill="#000"/>
+  <rect x="6" y="10" width="1" height="1" fill="#000"/>
+  <rect x="7" y="11" width="1" height="1" fill="#000"/>
+</svg>`;
+
 const ICON_SOLITAIRE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <rect x="1" y="2" width="9" height="12" rx="1" fill="#fff" stroke="#000" stroke-width="1"/>
   <path d="M5.5 5 C5.5 4 4 4 4 5.5 C4 7 5.5 8.5 5.5 8.5 C5.5 8.5 7 7 7 5.5 C7 4 5.5 4 5.5 5Z" fill="#cc0000"/>
@@ -138,6 +155,48 @@ const ICON_TASKMGR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16
   <rect x="2" y="11" width="5" height="1" fill="#000080"/>
   <rect x="2" y="13" width="9" height="1" fill="#808080"/>
 </svg>`;
+
+const ICON_FOLDER_GAMES = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <rect x="1" y="5" width="5" height="2" fill="#ffcc00" stroke="#808000" stroke-width="1"/>
+  <rect x="1" y="6" width="14" height="9" fill="#ffcc00" stroke="#808000" stroke-width="1"/>
+  <rect x="2" y="7" width="12" height="7" fill="#ffdd55"/>
+  <rect x="4" y="9" width="8" height="3" rx="1" fill="#808000" opacity="0.4"/>
+  <circle cx="6" cy="10.5" r="0.8" fill="#ffcc00"/>
+  <circle cx="10" cy="10.5" r="0.8" fill="#ffcc00"/>
+</svg>`;
+
+export const GAME_ICONS: DesktopIconData[] = [
+  {
+    id: "snake",
+    label: "Snake.exe",
+    icon: ICON_SNAKE,
+    defaultWidth: 400,
+    defaultHeight: 440,
+  },
+  {
+    id: "minesweeper",
+    label: "Minesweeper.exe",
+    icon: ICON_MINE,
+    defaultWidth: 300,
+    defaultHeight: 380,
+  },
+  {
+    id: "solitaire",
+    label: "Solitaire.exe",
+    windowTitle: "Solitaire",
+    icon: ICON_SOLITAIRE,
+    defaultWidth: 510,
+    defaultHeight: 480,
+  },
+  {
+    id: "dino",
+    label: "ZeydLost.exe",
+    windowTitle: "ZeydLost",
+    icon: ICON_DINO,
+    defaultWidth: 640,
+    defaultHeight: 300,
+  },
+];
 
 export const DESKTOP_ICONS: DesktopIconData[] = [
   {
@@ -163,18 +222,13 @@ export const DESKTOP_ICONS: DesktopIconData[] = [
     defaultHeight: 300,
   },
   {
-    id: "snake",
-    label: "Snake.exe",
-    icon: ICON_SNAKE,
-    defaultWidth: 400,
-    defaultHeight: 440,
-  },
-  {
-    id: "minesweeper",
-    label: "Minesweeper.exe",
-    icon: ICON_MINE,
-    defaultWidth: 300,
-    defaultHeight: 380,
+    id: "games",
+    label: "Games",
+    windowTitle: "Games",
+    icon: ICON_FOLDER_GAMES,
+    defaultWidth: 460,
+    defaultHeight: 340,
+    children: GAME_ICONS.map((g) => g.id),
   },
   {
     id: "cv",
@@ -224,14 +278,6 @@ export const DESKTOP_ICONS: DesktopIconData[] = [
     defaultHeight: 280,
   },
   {
-    id: "solitaire",
-    label: "Solitaire.exe",
-    windowTitle: "Solitaire",
-    icon: ICON_SOLITAIRE,
-    defaultWidth: 510,
-    defaultHeight: 480,
-  },
-  {
     id: "taskmanager",
     label: "Task Manager",
     windowTitle: "Windows Task Manager",
@@ -246,14 +292,12 @@ export const ICON_POSITIONS: Record<string, IconPosition> = {
   readme:      { top:   0, left:  0 },
   projects:    { top:  90, left:  0 },
   mail:        { top: 180, left:  0 },
-  snake:       { top: 270, left:  0 },
-  minesweeper: { top: 360, left:  0 },
-  cv:          { top: 450, left:  0 },
+  games:       { top: 270, left:  0 },
+  cv:          { top: 360, left:  0 },
   mycomputer:  { top:   0, left: 80 },
   recycle:     { top:  90, left: 80 },
   paint:       { top: 180, left: 80 },
   ie:          { top: 270, left: 80 },
   calculator:  { top: 360, left: 80 },
-  solitaire:   { top: 450, left: 80 },
-  taskmanager: { top: 540, left: 80 },
+  taskmanager: { top: 450, left: 80 },
 };

@@ -6,8 +6,11 @@ export interface DesktopIconData {
   windowTitle?: string;
   icon: string; // SVG string for the pixel art icon (empty/default state)
   iconFull?: string; // SVG for "full" state (e.g. Recycle Bin)
+  photoIcon?: string; // URL to a real image file used instead of the SVG icon
   defaultWidth: number;
   defaultHeight: number;
+  /** Icon IDs shown inside this folder window */
+  children?: string[];
 }
 
 /** Position of a window on the desktop */

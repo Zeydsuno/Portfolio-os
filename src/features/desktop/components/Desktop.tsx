@@ -33,6 +33,8 @@ import TaskManagerContent from "@/features/portfolio/components/TaskManagerConte
 import SolitaireGame from "@/features/games/solitaire/SolitaireGame";
 import SnakeGame from "@/features/games/snake/SnakeGame";
 import Minesweeper from "@/features/games/minesweeper/Minesweeper";
+import DinoGame from "@/features/games/dino/DinoGame";
+import FolderContent from "./FolderContent";
 import Screensaver from "./Screensaver";
 import BSODScreen from "./BSODScreen";
 import DisplayPropertiesDialog from "./DisplayPropertiesDialog";
@@ -43,14 +45,16 @@ const WINDOW_CONTENT: Record<string, () => ReactNode> = {
   projects:    () => <ProjectsContent />,
   mail:        () => <MailContent />,
   cv:          () => <NotepadWrapper><CVContent /></NotepadWrapper>,
+  games:       () => <FolderContent />,
   snake:       () => <SnakeGame />,
   minesweeper: () => <Minesweeper />,
+  solitaire:   () => <SolitaireGame />,
+  dino:        () => <DinoGame />,
   mycomputer:  () => <MyComputerContent />,
   recycle:     () => <RecycleBinContent />,
   paint:       () => <PaintContent />,
   ie:          () => <IEContent />,
   calculator:  () => <CalculatorContent />,
-  solitaire:   () => <SolitaireGame />,
   taskmanager: () => <TaskManagerContent />,
 };
 
