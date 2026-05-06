@@ -10,7 +10,15 @@
 /* iOS Safari bulletproofing */
 * {
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation; /* Prevents double-tap to zoom */
+}
+
+/* Prevent double-tap zoom on interactive elements — exclude canvas so game touch events are unaffected */
+*:not(canvas) {
+  touch-action: manipulation;
+}
+
+canvas {
+  touch-action: none; /* Games need raw touch events, not browser-handled gestures */
 }
 
 html, body {
