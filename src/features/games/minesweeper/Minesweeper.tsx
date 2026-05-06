@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { minesweeperStorage } from "./minesweeperStorage";
 
 const ROWS = 9;
 const COLS = 9;
@@ -55,53 +56,41 @@ const NUMBER_COLORS: Record<number, string> = {
   8: "#808080",
 };
 
-function createBoard(): Cell[][] {
-  const board: Cell[][] = Array.from({ length: ROWS }, () =>
-    Array.from({ length: COLS }, () => ({
-      isMine: false,
-      revealed: false,
-      flagged: false,
-      adjacentMines: 0,
-    }))
+// Mine positions are kept in a ref — never stored in React state during gameplay.
+// This prevents DevTools from reading isMine on unrevealed cells.
+function createMineMap(): boolean[][] {
+  const map: boolean[][] = Array.from({ length: ROWS }, () =>
+    Array.from({ length: COLS }, () => false)
   );
-
-  // Place mines
   let placed = 0;
   while (placed < MINE_COUNT) {
     const r = Math.floor(Math.random() * ROWS);
     const c = Math.floor(Math.random() * COLS);
-    if (!board[r][c].isMine) {
-      board[r][c].isMine = true;
-      placed++;
-    }
+    if (!map[r][c]) { map[r][c] = true; placed++; }
   }
+  return map;
+}
 
-  // Calculate adjacent mine counts
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (board[r][c].isMine) continue;
+function createVisibleBoard(mineMap: boolean[][]): Cell[][] {
+  return Array.from({ length: ROWS }, (_, r) =>
+    Array.from({ length: COLS }, (_, c) => {
       let count = 0;
-      for (let dr = -1; dr <= 1; dr++) {
+      for (let dr = -1; dr <= 1; dr++)
         for (let dc = -1; dc <= 1; dc++) {
-          const nr = r + dr;
-          const nc = c + dc;
-          if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc].isMine) {
-            count++;
-          }
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && mineMap[nr][nc]) count++;
         }
-      }
-      board[r][c].adjacentMines = count;
-    }
-  }
-
-  return board;
+      // isMine is always false here — real positions live in mineMapRef only
+      return { isMine: false, revealed: false, flagged: false, adjacentMines: count };
+    })
+  );
 }
 
 function cloneBoard(board: Cell[][]): Cell[][] {
   return board.map((row) => row.map((cell) => ({ ...cell })));
 }
 
-function revealCell(board: Cell[][], r: number, c: number): Cell[][] {
+function revealCell(board: Cell[][], mineMap: boolean[][], r: number, c: number): Cell[][] {
   const newBoard = cloneBoard(board);
   const stack: [number, number][] = [[r, c]];
 
@@ -110,55 +99,62 @@ function revealCell(board: Cell[][], r: number, c: number): Cell[][] {
     if (cr < 0 || cr >= ROWS || cc < 0 || cc >= COLS) continue;
     const cell = newBoard[cr][cc];
     if (cell.revealed || cell.flagged) continue;
-
     cell.revealed = true;
-
-    // Flood-fill for empty cells (0 adjacent mines)
-    if (cell.adjacentMines === 0 && !cell.isMine) {
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
+    if (cell.adjacentMines === 0 && !mineMap[cr][cc]) {
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++)
           stack.push([cr + dr, cc + dc]);
-        }
-      }
     }
   }
 
   return newBoard;
 }
 
-function checkWin(board: Cell[][]): boolean {
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (!board[r][c].isMine && !board[r][c].revealed) return false;
-    }
-  }
+function checkWin(board: Cell[][], mineMap: boolean[][]): boolean {
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (!mineMap[r][c] && !board[r][c].revealed) return false;
   return true;
 }
 
-function revealAllMines(board: Cell[][]): Cell[][] {
+function revealAllMines(board: Cell[][], mineMap: boolean[][]): Cell[][] {
   const newBoard = cloneBoard(board);
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (newBoard[r][c].isMine) newBoard[r][c].revealed = true;
-    }
-  }
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (mineMap[r][c]) { newBoard[r][c].isMine = true; newBoard[r][c].revealed = true; }
   return newBoard;
 }
 
 export default function Minesweeper() {
-  const [board, setBoard] = useState(createBoard);
+  const mineMapRef = useRef<boolean[][]>([]);
+  const [board, setBoard] = useState<Cell[][]>(() =>
+    Array.from({ length: ROWS }, () =>
+      Array.from({ length: COLS }, () => ({
+        isMine: false,
+        revealed: false,
+        flagged: false,
+        adjacentMines: 0,
+      }))
+    )
+  );
+
+  useEffect(() => {
+    const mineMap = createMineMap();
+    mineMapRef.current = mineMap;
+    Promise.resolve().then(() => {
+      setBoard(createVisibleBoard(mineMap));
+    });
+  }, []);
   const [gameStatus, setGameStatus] = useState<GameStatus>("playing");
   const [timer, setTimer] = useState(0);
-  const [bestTime, setBestTime] = useState(() =>
-    typeof window !== "undefined"
-      ? parseInt(localStorage.getItem("minesweeper_best_time") ?? "0", 10)
-      : 0
-  );
+  const [bestTime, setBestTime] = useState(0);
   const [flagMode, setFlagMode] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const startedRef = useRef(false);
+  const sessionStartRef = useRef(0);
+  const clickCountRef = useRef(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
@@ -198,9 +194,14 @@ export default function Minesweeper() {
     };
   }, []);
 
+  useEffect(() => {
+    minesweeperStorage.load().then(v => { if (v > 0) setBestTime(v); });
+  }, []);
+
   const startTimer = useCallback(() => {
     if (!startedRef.current) {
       startedRef.current = true;
+      sessionStartRef.current = Date.now();
       timerRef.current = setInterval(() => setTimer((t) => t + 1), 1000);
     }
   }, []);
@@ -208,7 +209,11 @@ export default function Minesweeper() {
   const resetGame = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     startedRef.current = false;
-    setBoard(createBoard());
+    sessionStartRef.current = 0;
+    clickCountRef.current = 0;
+    const mineMap = createMineMap();
+    mineMapRef.current = mineMap;
+    setBoard(createVisibleBoard(mineMap));
     setGameStatus("playing");
     setTimer(0);
     setFlagMode(false);
@@ -230,22 +235,25 @@ export default function Minesweeper() {
 
       if (cell.revealed || cell.flagged) return;
       startTimer();
+      clickCountRef.current++;
 
-      if (cell.isMine) {
-        setBoard(revealAllMines(board));
+      if (mineMapRef.current[r][c]) {
+        setBoard(revealAllMines(board, mineMapRef.current));
         window.umami?.track("game_over", { game: "minesweeper", result: "lost" });
         setGameStatus("lost");
         return;
       }
 
-      const newBoard = revealCell(board, r, c);
+      const newBoard = revealCell(board, mineMapRef.current, r, c);
       setBoard(newBoard);
-      if (checkWin(newBoard)) {
+      if (checkWin(newBoard, mineMapRef.current)) {
         window.umami?.track("game_over", { game: "minesweeper", result: "won", time: timer });
         setGameStatus("won");
-        if (bestTime === 0 || timer < bestTime) {
+        const wallSec = (Date.now() - sessionStartRef.current) / 1000;
+        const plausible = timer >= 2 && wallSec >= 2 && timer <= wallSec * 2 + 5 && clickCountRef.current >= 1;
+        if ((bestTime === 0 || timer < bestTime) && plausible) {
           setBestTime(timer);
-          localStorage.setItem("minesweeper_best_time", String(timer));
+          minesweeperStorage.save(timer, sessionStartRef.current);
         }
       }
     },
@@ -270,6 +278,11 @@ export default function Minesweeper() {
 
   const smiley = gameStatus === "won" ? "B)" : gameStatus === "lost" ? "X(" : ":)";
 
+  const diff = MINE_COUNT - flagCount;
+  const formattedMines = diff < 0
+    ? "-" + String(Math.abs(diff)).padStart(2, "0")
+    : String(diff).padStart(3, "0");
+
   return (
     <div className="flex flex-col items-center gap-1 w-full h-full overflow-hidden" style={{ padding: "4px" }}>
       {/* Header: mine counter, smiley, timer */}
@@ -292,7 +305,7 @@ export default function Minesweeper() {
             textAlign: "center",
           }}
         >
-          {String(MINE_COUNT - flagCount).padStart(3, "0")}
+          {formattedMines}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
           <button onClick={resetGame} style={{ fontSize: "16px", padding: "2px 6px", cursor: "pointer" }}>

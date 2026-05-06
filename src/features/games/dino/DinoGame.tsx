@@ -12,6 +12,8 @@ import {
 } from "./constants";
 import { drawPterodactyl, drawCactus, drawCloud, drawStar, drawMoon, drawShootingStar, drawTumbleweed } from "./renderer";
 import { DinoHelpModal } from "./DinoHelpModal";
+import { saveHighScore, loadHighScore } from "./scoreStorage";
+import { gameState } from "./gameState";
 
 const FIXED_STEP = 1000 / 120; // ~8.33ms per physics tick — keeps gameplay fast and identical on 60/144/240Hz
 
@@ -39,12 +41,7 @@ export default function DinoGame() {
   const nightPhaseRef   = useRef(0);
   const isNightRef      = useRef(false);
   const nextPhaseScoreRef = useRef(1000 + Math.random() * 500);
-  const scoreRef        = useRef(0);
-  const hiRef           = useRef(
-    typeof window !== "undefined"
-      ? parseInt(localStorage.getItem("dino_high_score") ?? "0", 10)
-      : 0
-  );
+  const hiRef           = useRef(0);
   const speedRef        = useRef(BASE_SPEED);
   const animFrameRef    = useRef(0);
   const gndOffRef       = useRef(0);
@@ -63,6 +60,10 @@ export default function DinoGame() {
     const bug = new Image();
     bug.src = "/images/bug-sprite.png";
     bug.onload = () => { bugSpriteRef.current = bug; };
+  }, []);
+
+  useEffect(() => {
+    loadHighScore().then(score => { hiRef.current = score; });
   }, []);
 
   const draw = useCallback(() => {
@@ -136,7 +137,7 @@ export default function DinoGame() {
     ctx.font = "8px 'Press Start 2P', monospace";
     ctx.textAlign = "right";
     ctx.fillText(
-      `HI ${String(hiRef.current).padStart(5, "0")}  ${String(Math.floor(scoreRef.current)).padStart(5, "0")}`,
+      `HI ${String(hiRef.current).padStart(5, "0")}  ${String(Math.floor(gameState.getScore())).padStart(5, "0")}`,
       CANVAS_W - 8, 20,
     );
     ctx.textAlign = "left";
@@ -173,7 +174,7 @@ export default function DinoGame() {
     nightPhaseRef.current = 0;
     isNightRef.current = false;
     nextPhaseScoreRef.current = 1000 + Math.random() * 500;
-    scoreRef.current   = 0;
+    gameState.reset();
     speedRef.current   = BASE_SPEED;
     animFrameRef.current = 0;
     gndOffRef.current  = 0;
@@ -192,6 +193,7 @@ export default function DinoGame() {
       return;
     }
     if (onGroundRef.current) {
+      gameState.countInput();
       dinoVYRef.current    = JUMP_VY_INITIAL;
       onGroundRef.current  = false;
       jumpHeldRef.current  = true;
@@ -208,6 +210,7 @@ export default function DinoGame() {
   }, []);
 
   const setDuck = useCallback((active: boolean) => {
+    if (active && !isDuckRef.current) gameState.countInput();
     isDuckRef.current = active;
   }, []);
 
@@ -242,9 +245,9 @@ export default function DinoGame() {
   }, []);
 
   const updateEnvironment = useCallback(() => {
-    if (scoreRef.current >= nextPhaseScoreRef.current) {
+    if (gameState.getScore() >= nextPhaseScoreRef.current) {
       isNightRef.current = !isNightRef.current;
-      nextPhaseScoreRef.current = scoreRef.current + 1000 + Math.random() * 500;
+      nextPhaseScoreRef.current = gameState.getScore() + 1000 + Math.random() * 500;
     }
     
     const targetNight = isNightRef.current ? 1 : 0;
@@ -354,7 +357,7 @@ export default function DinoGame() {
   }, []);
 
   const updateObstacles = useCallback((ts: number) => {
-    const spawnInterval = Math.max(900, 1800 - Math.floor(scoreRef.current) * 0.5);
+    const spawnInterval = Math.max(900, 1800 - Math.floor(gameState.getScore()) * 0.5);
     if (ts - spawnTsRef.current > spawnInterval) {
       const noPteroOnScreen = pterosRef.current.every(p => p.x < DINO_X - 80 || p.x > CANVAS_W + 50);
       if (noPteroOnScreen) {
@@ -366,8 +369,8 @@ export default function DinoGame() {
       }
     }
 
-    if (scoreRef.current > 30) {
-      const pteroInterval = Math.max(3000, 6000 - Math.floor(scoreRef.current) * 5);
+    if (gameState.getScore() > 30) {
+      const pteroInterval = Math.max(3000, 6000 - Math.floor(gameState.getScore()) * 5);
       const timerReady = ts - pteroSpawnTsRef.current > pteroInterval;
       const safeFromCacti = cactiRef.current.every(c => c.x < DINO_X - 80 || c.x > CANVAS_W + 300);
       if (timerReady && safeFromCacti) {
@@ -423,14 +426,23 @@ export default function DinoGame() {
   }, []);
 
   const updateScore = useCallback(() => {
-    scoreRef.current += speedRef.current * 0.1;
-    const prevScore = Math.floor(scoreRef.current - speedRef.current * 0.1);
-    if (Math.floor(scoreRef.current) % 500 === 0 && Math.floor(scoreRef.current) !== prevScore && Math.floor(scoreRef.current) > 0) {
-      playDinoPoint();
-    }
+    const prev = Math.floor(gameState.getScore());
+    gameState.addScore(speedRef.current * 0.1);
+    const curr = Math.floor(gameState.getScore());
+    if (curr % 500 === 0 && curr !== prev && curr > 0) playDinoPoint();
   }, []);
 
   const gameLoop = useCallback(function loop(ts: number) {
+    if (lastTsRef.current > 0) {
+      const rawDelta = ts - lastTsRef.current;
+      if (rawDelta < 0 || rawDelta > 3000) {
+        accumRef.current  = 0;
+        lastTsRef.current = ts;
+        draw();
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
+    }
     if (lastTsRef.current < 0) lastTsRef.current = ts;
     const delta = Math.min(ts - lastTsRef.current, 100);
     lastTsRef.current = ts;
@@ -447,8 +459,12 @@ export default function DinoGame() {
         updateObstacles(ts);
 
         if (checkCollisions()) {
-          window.umami?.track("game_over", { game: "dino", score: Math.floor(scoreRef.current), new_highscore: scoreRef.current > hiRef.current });
-          if (scoreRef.current > hiRef.current) { hiRef.current = Math.floor(scoreRef.current); localStorage.setItem("dino_high_score", String(hiRef.current)); }
+          const finalScore = Math.floor(gameState.getScore());
+          window.umami?.track("game_over", { game: "dino", score: finalScore, new_highscore: finalScore > hiRef.current });
+          if (finalScore > hiRef.current && gameState.isPlausible(finalScore)) {
+            hiRef.current = finalScore;
+            saveHighScore(finalScore, gameState.getSessionStart());
+          }
           statusRef.current = "gameover";
           stopDinoBgm();
           playDinoDie();

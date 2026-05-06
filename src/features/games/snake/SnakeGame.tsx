@@ -3,6 +3,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import DPad from "@/components/DPad";
 import { playSnakeEat, playSnakeDie, playDinoPoint } from "@/features/desktop/utils/sounds";
+import { snakeStorage } from "./snakeStorage";
+import { snakeState } from "./snakeState";
 
 const CELL_SIZE = 16;
 const GRID_W = 20;
@@ -35,11 +37,7 @@ export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
-  const [highScore, setHighScore] = useState(() =>
-    typeof window !== "undefined"
-      ? parseInt(localStorage.getItem("snake_high_score") ?? "0", 10)
-      : 0
-  );
+  const [highScore, setHighScore] = useState(0);
   const [status, setStatus] = useState<GameStatus>("waiting");
   const [popups, setPopups] = useState<{ id: number; x: number; y: number; text: string; color: string }[]>([]);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -51,12 +49,7 @@ export default function SnakeGame() {
   const foodRef = useRef<Point>({ x: 15, y: 10 });
   const goldenFoodRef = useRef<{ x: number; y: number; timer: number } | null>(null);
   const popupIdRef = useRef(0);
-  const scoreRef = useRef(0);
-  const highScoreRef = useRef(
-    typeof window !== "undefined"
-      ? parseInt(localStorage.getItem("snake_high_score") ?? "0", 10)
-      : 0
-  );
+  const highScoreRef = useRef(0);
   const statusRef = useRef<GameStatus>("waiting");
   const speedRef = useRef(TICK_MS);
   const loopRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -129,7 +122,7 @@ export default function SnakeGame() {
     foodRef.current = spawnFood(snakeRef.current);
     goldenFoodRef.current = null;
     setPopups([]);
-    scoreRef.current = 0;
+    snakeState.reset();
     speedRef.current = TICK_MS;
     setScore(0);
     statusRef.current = "playing";
@@ -138,11 +131,12 @@ export default function SnakeGame() {
 
   const triggerGameOver = useCallback(() => {
     playSnakeDie();
-    window.umami?.track("game_over", { game: "snake", score: scoreRef.current, new_highscore: scoreRef.current > highScoreRef.current });
-    if (scoreRef.current > highScoreRef.current) {
-      highScoreRef.current = scoreRef.current;
-      setHighScore(highScoreRef.current);
-      localStorage.setItem("snake_high_score", String(highScoreRef.current));
+    const finalScore = snakeState.getScore();
+    window.umami?.track("game_over", { game: "snake", score: finalScore, new_highscore: finalScore > highScoreRef.current });
+    if (finalScore > highScoreRef.current && snakeState.isPlausible(finalScore)) {
+      highScoreRef.current = finalScore;
+      setHighScore(finalScore);
+      snakeStorage.save(finalScore, snakeState.getSessionStart());
     }
     statusRef.current = "gameover";
     setStatus("gameover");
@@ -193,8 +187,8 @@ export default function SnakeGame() {
       newHead.y === goldenFoodRef.current.y
     ) {
       playDinoPoint();
-      scoreRef.current += 50;
-      setScore(scoreRef.current);
+      snakeState.addScore(50);
+      setScore(snakeState.getScore());
       goldenFoodRef.current = null;
       ateFood = true;
 
@@ -208,8 +202,8 @@ export default function SnakeGame() {
       newHead.y === foodRef.current.y
     ) {
       playSnakeEat();
-      scoreRef.current += 10;
-      setScore(scoreRef.current);
+      snakeState.addScore(10);
+      setScore(snakeState.getScore());
       foodRef.current = spawnFood(newSnake);
       ateFood = true;
 
@@ -270,16 +264,16 @@ export default function SnakeGame() {
       const dir = dirRef.current;
       switch (e.key) {
         case "ArrowUp":
-          if (dir !== "DOWN") nextDirRef.current = "UP";
+          if (dir !== "DOWN") { nextDirRef.current = "UP"; snakeState.countInput(); }
           break;
         case "ArrowDown":
-          if (dir !== "UP") nextDirRef.current = "DOWN";
+          if (dir !== "UP") { nextDirRef.current = "DOWN"; snakeState.countInput(); }
           break;
         case "ArrowLeft":
-          if (dir !== "RIGHT") nextDirRef.current = "LEFT";
+          if (dir !== "RIGHT") { nextDirRef.current = "LEFT"; snakeState.countInput(); }
           break;
         case "ArrowRight":
-          if (dir !== "LEFT") nextDirRef.current = "RIGHT";
+          if (dir !== "LEFT") { nextDirRef.current = "RIGHT"; snakeState.countInput(); }
           break;
         default:
           return;
@@ -293,6 +287,12 @@ export default function SnakeGame() {
       if (loopRef.current) clearInterval(loopRef.current);
     };
   }, [startGame]);
+
+  useEffect(() => {
+    snakeStorage.load().then(v => {
+      if (v > 0) { highScoreRef.current = v; setHighScore(v); }
+    });
+  }, []);
 
   // Initial draw
   useEffect(() => {
@@ -317,11 +317,11 @@ export default function SnakeGame() {
       return;
     }
     if (absDx > absDy) {
-      if (dx > 0 && dirRef.current !== "LEFT") nextDirRef.current = "RIGHT";
-      else if (dx < 0 && dirRef.current !== "RIGHT") nextDirRef.current = "LEFT";
+      if (dx > 0 && dirRef.current !== "LEFT") { nextDirRef.current = "RIGHT"; snakeState.countInput(); }
+      else if (dx < 0 && dirRef.current !== "RIGHT") { nextDirRef.current = "LEFT"; snakeState.countInput(); }
     } else {
-      if (dy > 0 && dirRef.current !== "UP") nextDirRef.current = "DOWN";
-      else if (dy < 0 && dirRef.current !== "DOWN") nextDirRef.current = "UP";
+      if (dy > 0 && dirRef.current !== "UP") { nextDirRef.current = "DOWN"; snakeState.countInput(); }
+      else if (dy < 0 && dirRef.current !== "DOWN") { nextDirRef.current = "UP"; snakeState.countInput(); }
     }
   }
 
@@ -332,10 +332,10 @@ export default function SnakeGame() {
     }
     if (statusRef.current === "gameover") return;
     const cur = dirRef.current;
-    if (d === "UP" && cur !== "DOWN") nextDirRef.current = "UP";
-    else if (d === "DOWN" && cur !== "UP") nextDirRef.current = "DOWN";
-    else if (d === "LEFT" && cur !== "RIGHT") nextDirRef.current = "LEFT";
-    else if (d === "RIGHT" && cur !== "LEFT") nextDirRef.current = "RIGHT";
+    if (d === "UP" && cur !== "DOWN") { nextDirRef.current = "UP"; snakeState.countInput(); }
+    else if (d === "DOWN" && cur !== "UP") { nextDirRef.current = "DOWN"; snakeState.countInput(); }
+    else if (d === "LEFT" && cur !== "RIGHT") { nextDirRef.current = "LEFT"; snakeState.countInput(); }
+    else if (d === "RIGHT" && cur !== "LEFT") { nextDirRef.current = "RIGHT"; snakeState.countInput(); }
   }
 
 

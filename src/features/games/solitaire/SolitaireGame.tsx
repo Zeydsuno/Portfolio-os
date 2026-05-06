@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { solitaireStorage } from "./solitaireStorage";
 
 const FONT: React.CSSProperties = { fontFamily: "'Press Start 2P', cursive" };
 
@@ -234,6 +235,11 @@ export default function SolitaireGame() {
   const [game, setGame] = useState<GameState>(initGame);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [bestMoves, setBestMoves] = useState(0);
+
+  const sessionStartRef = useRef<number>(0);
+  const legMovesRef = useRef<number>(0);
+  const bestMovesRef = useRef<number>(0);
 
   // Refs for hit testing
   const wasteRef = useRef<HTMLDivElement>(null);
@@ -262,8 +268,31 @@ export default function SolitaireGame() {
   }, []);
 
   useEffect(() => {
-    if (game.won) window.umami?.track("game_over", { game: "solitaire", result: "won", moves: game.moves });
+    solitaireStorage.load().then(v => {
+      if (v > 0) { bestMovesRef.current = v; setBestMoves(v); }
+    });
+    sessionStartRef.current = Date.now();
+  }, []);
+
+  useEffect(() => {
+    if (!game.won) return;
+    const wallSec = (Date.now() - sessionStartRef.current) / 1000;
+    const plausible = wallSec >= 30 && legMovesRef.current >= 52;
+    window.umami?.track("game_over", { game: "solitaire", result: "won", moves: game.moves, plausible });
+    if (plausible && (bestMovesRef.current === 0 || game.moves < bestMovesRef.current)) {
+      bestMovesRef.current = game.moves;
+      Promise.resolve().then(() => {
+        setBestMoves(game.moves);
+      });
+      solitaireStorage.save(game.moves, sessionStartRef.current);
+    }
   }, [game.won, game.moves]);
+
+  const startNewGame = useCallback(() => {
+    sessionStartRef.current = Date.now();
+    legMovesRef.current = 0;
+    setGame(initGame());
+  }, []);
 
   useEffect(() => {
     if (!drag) return;
@@ -291,7 +320,7 @@ export default function SolitaireGame() {
         if (hit(foundRefs.current[i])) {
           const base = removeFromSource(game, drag.from, drag.cards.length);
           const result = placeOnFoundation(base, drag.cards, i);
-          if (result) { setGame(result); return; }
+          if (result) { legMovesRef.current++; setGame(result); return; }
           break;
         }
       }
@@ -301,7 +330,7 @@ export default function SolitaireGame() {
         if (hit(tabRefs.current[i])) {
           const base = removeFromSource(game, drag.from, drag.cards.length);
           const result = placeOnTableauCol(base, drag.cards, i);
-          if (result) { setGame(result); return; }
+          if (result) { legMovesRef.current++; setGame(result); return; }
           break;
         }
       }
@@ -322,8 +351,10 @@ export default function SolitaireGame() {
     setGame(g => {
       if (g.stock.length === 0) {
         if (g.waste.length === 0) return g;
+        legMovesRef.current++;
         return { ...g, stock: [...g.waste].reverse().map(c => ({ ...c, faceUp: false })), waste: [] };
       }
+      legMovesRef.current++;
       const card = { ...g.stock[g.stock.length - 1], faceUp: true };
       return { ...g, stock: g.stock.slice(0, -1), waste: [...g.waste, card] };
     });
@@ -335,7 +366,7 @@ export default function SolitaireGame() {
         if (canPlaceFoundation(card, g.foundations[i])) {
           const base = removeFromSource(g, from, 1);
           const result = placeOnFoundation(base, [card], i);
-          if (result) return result;
+          if (result) { legMovesRef.current++; return result; }
         }
       }
       return g;
@@ -376,7 +407,10 @@ export default function SolitaireGame() {
         }}>
           <div style={{ ...FONT, fontSize: 14, color: "#ffff00" }}>You Win!</div>
           <div style={{ ...FONT, fontSize: 9, color: "#fff" }}>{game.moves} moves</div>
-          <button onClick={() => setGame(initGame())} style={{ ...FONT, fontSize: 9, padding: "6px 14px", cursor: "pointer" }}>
+          {bestMoves > 0 && (
+            <div style={{ ...FONT, fontSize: 8, color: "#aaffaa" }}>Best: {bestMoves} moves</div>
+          )}
+          <button onClick={startNewGame} style={{ ...FONT, fontSize: 9, padding: "6px 14px", cursor: "pointer" }}>
             New Game
           </button>
         </div>
@@ -510,7 +544,7 @@ export default function SolitaireGame() {
             style={{ ...FONT, fontSize: 7, padding: "3px 8px", cursor: "pointer", border: "2px solid", borderColor: "#fff #808080 #808080 #fff", background: "#c0c0c0" }}
           >?</button>
           <button
-            onClick={() => setGame(initGame())}
+            onClick={startNewGame}
             style={{ ...FONT, fontSize: 7, padding: "3px 8px", cursor: "pointer", border: "2px solid", borderColor: "#fff #808080 #808080 #fff", background: "#c0c0c0" }}
           >New Game</button>
         </div>
