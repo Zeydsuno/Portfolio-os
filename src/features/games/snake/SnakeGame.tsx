@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import DPad from "@/components/DPad";
 import { playSnakeEat, playSnakeDie, playDinoPoint, unlockAudio } from "@/features/desktop/utils/sounds";
 import { snakeStorage } from "./snakeStorage";
@@ -35,8 +35,7 @@ function spawnFood(snake: Point[]): Point {
 
 export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [squareSide, setSquareSide] = useState(320);
+
   const [score, setScore] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
   const [highScore, setHighScore] = useState(0);
@@ -44,10 +43,12 @@ export default function SnakeGame() {
   const [popups, setPopups] = useState<{ id: number; x: number; y: number; text: string; color: string }[]>([]);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+  const [isTouchOrMobile, setIsTouchOrMobile] = useState(false);
 
   useEffect(() => {
     const checkLayout = () => {
       const touch = window.innerWidth < 768 || window.innerHeight < 500 || ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+      setIsTouchOrMobile(touch);
       const mobileLandscape = touch && window.innerHeight < 500;
       setIsMobileLandscape(mobileLandscape);
     };
@@ -56,21 +57,7 @@ export default function SnakeGame() {
     return () => window.removeEventListener("resize", checkLayout);
   }, []);
 
-  useLayoutEffect(() => {
-    const el = canvasContainerRef.current;
-    if (!el) return;
-    const update = () => {
-      const { width, height } = el.getBoundingClientRect();
-      const val = Math.floor(Math.min(width, height));
-      if (val > 50) {
-        setSquareSide(val);
-      }
-    };
-    update();
-    const obs = new ResizeObserver(update);
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+
 
   // Game state in refs to avoid re-renders each frame
   const snakeRef = useRef<Point[]>([{ x: 10, y: 10 }]);
@@ -379,11 +366,13 @@ export default function SnakeGame() {
         }
       `}</style>
       
-      <div ref={canvasContainerRef} className="flex-1 min-h-0 min-w-0 flex items-center justify-center">
+      <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center w-full h-full">
         <div style={{
           position: "relative",
-          width: squareSide || CANVAS_W,
-          height: squareSide || CANVAS_H,
+          height: "100%",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          aspectRatio: "1/1",
           flexShrink: 0,
         }}>
           <canvas
@@ -394,6 +383,7 @@ export default function SnakeGame() {
               display: "block",
               width: "100%",
               height: "100%",
+              objectFit: "contain",
               imageRendering: "pixelated",
               border: "2px inset",
               touchAction: "none"
@@ -521,7 +511,7 @@ export default function SnakeGame() {
             ?
           </button>
         </div>
-        <DPad onDirection={handleDPad} size={isMobileLandscape ? 44 : 72} gap={isMobileLandscape ? 4 : 6} />
+        {isTouchOrMobile && <DPad onDirection={handleDPad} size={isMobileLandscape ? 44 : 72} gap={isMobileLandscape ? 4 : 6} />}
       </div>
 
       {/* Help overlay */}
