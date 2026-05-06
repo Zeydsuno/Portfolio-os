@@ -35,8 +35,6 @@ function spawnFood(snake: Point[]): Point {
 
 export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [squareSide, setSquareSide] = useState(320);
 
   const [score, setScore] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
@@ -57,20 +55,6 @@ export default function SnakeGame() {
     checkLayout();
     window.addEventListener("resize", checkLayout);
     return () => window.removeEventListener("resize", checkLayout);
-  }, []);
-
-  useEffect(() => {
-    const el = canvasContainerRef.current;
-    if (!el) return;
-    const update = () => {
-      const { width, height } = el.getBoundingClientRect();
-      const val = Math.floor(Math.min(width, height));
-      if (val > 50) setSquareSide(val);
-    };
-    update();
-    const obs = new ResizeObserver(update);
-    obs.observe(el);
-    return () => obs.disconnect();
   }, []);
 
 
@@ -382,12 +366,14 @@ export default function SnakeGame() {
         }
       `}</style>
       
-      <div ref={canvasContainerRef} className="flex-1 min-h-0 min-w-0 flex items-center justify-center w-full h-full">
+      <div className="flex-1 min-h-0 min-w-0 w-full h-full" style={{ position: "relative" }}>
         <div style={{
-          position: "relative",
-          width: squareSide,
-          height: squareSide,
-          flexShrink: 0,
+          position: "absolute",
+          inset: 0,
+          margin: "auto",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          aspectRatio: "1/1",
         }}>
           <canvas
             ref={canvasRef}
@@ -395,8 +381,8 @@ export default function SnakeGame() {
             height={CANVAS_H}
             style={{
               display: "block",
-              width: squareSide,
-              height: squareSide,
+              width: "100%",
+              height: "100%",
               imageRendering: "pixelated",
               border: "2px inset",
             }}
