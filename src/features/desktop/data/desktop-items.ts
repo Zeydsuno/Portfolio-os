@@ -1,7 +1,7 @@
 import type { DesktopIconData, IconPosition } from "@/types";
 
 // 16x16 pixel art SVG icons as inline strings
-const ICON_NOTEPAD = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+export const ICON_NOTEPAD =`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <rect x="2" y="1" width="12" height="14" fill="#fff" stroke="#000" stroke-width="1"/>
   <rect x="2" y="1" width="12" height="3" fill="#000080"/>
   <line x1="4" y1="6" x2="12" y2="6" stroke="#000" stroke-width="1"/>
@@ -10,7 +10,7 @@ const ICON_NOTEPAD = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16
   <line x1="4" y1="12" x2="8" y2="12" stroke="#000" stroke-width="1"/>
 </svg>`;
 
-const ICON_COMPUTER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+export const ICON_COMPUTER =`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <rect x="1" y="1" width="14" height="10" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
   <rect x="2" y="2" width="12" height="8" fill="#000080"/>
   <rect x="3" y="3" width="10" height="6" fill="#008080"/>
@@ -18,14 +18,14 @@ const ICON_COMPUTER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 1
   <rect x="3" y="13" width="10" height="1" fill="#c0c0c0" stroke="#000" stroke-width="0.5"/>
 </svg>`;
 
-const ICON_MAIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+export const ICON_MAIL = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <rect x="1" y="3" width="14" height="10" fill="#fff" stroke="#000" stroke-width="1"/>
   <polyline points="1,3 8,9 15,3" fill="none" stroke="#000" stroke-width="1"/>
   <line x1="1" y1="13" x2="6" y2="8" stroke="#000" stroke-width="0.5"/>
   <line x1="15" y1="13" x2="10" y2="8" stroke="#000" stroke-width="0.5"/>
 </svg>`;
 
-const ICON_SNAKE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+export const ICON_SNAKE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <rect x="1" y="7" width="3" height="3" fill="#00aa00"/>
   <rect x="4" y="7" width="3" height="3" fill="#00cc00"/>
   <rect x="7" y="7" width="3" height="3" fill="#00aa00"/>
@@ -36,7 +36,7 @@ const ICON_SNAKE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" 
   <rect x="2" y="12" width="2" height="2" fill="#ff0000"/>
 </svg>`;
 
-const ICON_MINE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+export const ICON_MINE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <circle cx="8" cy="8" r="4" fill="#333"/>
   <line x1="8" y1="2" x2="8" y2="14" stroke="#333" stroke-width="1.5"/>
   <line x1="2" y1="8" x2="14" y2="8" stroke="#333" stroke-width="1.5"/>
@@ -45,14 +45,44 @@ const ICON_MINE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" w
   <rect x="6" y="6" width="2" height="2" fill="#fff"/>
 </svg>`;
 
-const ICON_CV = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
-  <rect x="2" y="1" width="12" height="14" fill="#fff" stroke="#000" stroke-width="1"/>
-  <rect x="2" y="1" width="12" height="3" fill="#000080"/>
-  <line x1="4" y1="6" x2="12" y2="6" stroke="#000" stroke-width="1"/>
-  <line x1="4" y1="8" x2="12" y2="8" stroke="#000" stroke-width="1"/>
-  <line x1="4" y1="10" x2="12" y2="10" stroke="#000" stroke-width="1"/>
-  <line x1="4" y1="12" x2="8" y2="12" stroke="#000" stroke-width="1"/>
-  <rect x="6" y="1" width="4" height="2" fill="#c0c0c0" stroke="#000" stroke-width="0.5"/>
+export const ICON_CV = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <!-- Base white sheet of paper with black outline -->
+  <polygon points="2,1 10,1 14,5 14,15 2,15" fill="#fff" stroke="#000" stroke-width="1"/>
+  <!-- Folded corner page flap -->
+  <polygon points="10,1 10,5 14,5" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
+  <!-- Profile photo frame -->
+  <rect x="4" y="3" width="4" height="4" fill="#008080" stroke="#000" stroke-width="0.5"/>
+  <!-- Profile figure (head and shoulders) -->
+  <circle cx="6" cy="4.5" r="1" fill="#fff"/>
+  <path d="M4.5,7 C4.5,6 7.5,6 7.5,7" fill="#fff" stroke="#fff" stroke-width="0.5"/>
+  <!-- Text rows next to photo -->
+  <line x1="9" y1="3" x2="12" y2="3" stroke="#000" stroke-width="1"/>
+  <line x1="9" y1="5" x2="13" y2="5" stroke="#000" stroke-width="1"/>
+  <!-- Main body text lines -->
+  <line x1="4" y1="9" x2="12" y2="9" stroke="#808080" stroke-width="1"/>
+  <line x1="4" y1="11" x2="12" y2="11" stroke="#808080" stroke-width="1"/>
+  <line x1="4" y1="13" x2="9" y2="13" stroke="#808080" stroke-width="1"/>
+  <!-- Official gold credential seal in the bottom-right corner -->
+  <circle cx="11.5" cy="12.5" r="2.2" fill="#ffcc00" stroke="#808000" stroke-width="0.5"/>
+  <!-- Red ribbon hanging out of seal -->
+  <polygon points="11,13 11,15 12,14 13,15 13,13" fill="#ff0000"/>
+</svg>`;
+
+export const ICON_README = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+  <!-- Base white document sheet with folded corner -->
+  <polygon points="2,1 11,1 14,4 14,15 2,15" fill="#fff" stroke="#000" stroke-width="1"/>
+  <!-- Folded corner effect -->
+  <polygon points="11,1 11,4 14,4" fill="#c0c0c0" stroke="#000" stroke-width="1"/>
+  <!-- Lines of text in the document -->
+  <line x1="4" y1="6" x2="9" y2="6" stroke="#808080" stroke-width="1"/>
+  <line x1="4" y1="8" x2="11" y2="8" stroke="#808080" stroke-width="1"/>
+  <line x1="4" y1="10" x2="11" y2="10" stroke="#808080" stroke-width="1"/>
+  <line x1="4" y1="12" x2="8" y2="12" stroke="#808080" stroke-width="1"/>
+  <!-- Retro "i" circle emblem (Information) in the bottom-right corner -->
+  <circle cx="11" cy="11" r="4.5" fill="#1084d0" stroke="#000" stroke-width="1"/>
+  <!-- Letter "i" inside the circle -->
+  <rect x="10.5" y="9" width="1" height="1" fill="#fff"/>
+  <rect x="10.5" y="11" width="1" height="3" fill="#fff"/>
 </svg>`;
 
 const ICON_MYCOMPUTER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
@@ -120,7 +150,7 @@ const ICON_CALC = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" w
   <rect x="12" y="13" width="2" height="2" fill="#000080"/>
 </svg>`;
 
-const ICON_DINO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+export const ICON_DINO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <rect x="1" y="1" width="14" height="14" fill="#d0e8c8" stroke="#000" stroke-width="1"/>
   <rect x="1" y="12" width="14" height="1" fill="#555"/>
   <rect x="10" y="8" width="2" height="4" fill="#2d6b1a"/>
@@ -137,7 +167,7 @@ const ICON_DINO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" w
   <rect x="7" y="11" width="1" height="1" fill="#000"/>
 </svg>`;
 
-const ICON_SOLITAIRE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
+export const ICON_SOLITAIRE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="48" height="48">
   <rect x="1" y="2" width="9" height="12" rx="1" fill="#fff" stroke="#000" stroke-width="1"/>
   <path d="M5.5 5 C5.5 4 4 4 4 5.5 C4 7 5.5 8.5 5.5 8.5 C5.5 8.5 7 7 7 5.5 C7 4 5.5 4 5.5 5Z" fill="#cc0000"/>
   <rect x="6" y="4" width="9" height="12" rx="1" fill="#fff" stroke="#000" stroke-width="1"/>
@@ -203,7 +233,7 @@ export const DESKTOP_ICONS: DesktopIconData[] = [
     id: "readme",
     label: "Readme.txt",
     windowTitle: "Readme.txt - Notepad",
-    icon: ICON_NOTEPAD,
+    icon: ICON_README,
     defaultWidth: 450,
     defaultHeight: 350,
   },
@@ -287,7 +317,7 @@ export const DESKTOP_ICONS: DesktopIconData[] = [
   },
 ];
 
-// Grid: 80px wide × 90px tall per cell — must stay aligned with dropIcons() in the store
+// Grid: 80px wide ร— 90px tall per cell โ€” must stay aligned with dropIcons() in the store
 export const ICON_POSITIONS: Record<string, IconPosition> = {
   readme:      { top:   0, left:  0 },
   projects:    { top:  90, left:  0 },
@@ -301,3 +331,4 @@ export const ICON_POSITIONS: Record<string, IconPosition> = {
   calculator:  { top: 360, left: 80 },
   taskmanager: { top: 450, left: 80 },
 };
+

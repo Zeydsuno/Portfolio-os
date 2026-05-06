@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { minesweeperStorage } from "./minesweeperStorage";
+import { playMinesweeperExplosion } from "../../desktop/utils/sounds";
 
 const ROWS = 9;
 const COLS = 9;
@@ -150,7 +151,7 @@ export default function Minesweeper() {
   const [bestTime, setBestTime] = useState(0);
   const [flagMode, setFlagMode] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [isNarrow, setIsNarrow] = useState(false);
+  const [isTouchOrMobile, setIsTouchOrMobile] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const startedRef = useRef(false);
   const sessionStartRef = useRef(0);
@@ -172,10 +173,13 @@ export default function Minesweeper() {
   }, []);
 
   useEffect(() => {
-    const check = () => setIsNarrow(window.innerWidth < 600);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768 || window.innerHeight < 500 || ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+      setIsTouchOrMobile(mobile);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const flagCount = board.flat().filter((c) => c.flagged).length;
@@ -241,6 +245,7 @@ export default function Minesweeper() {
         setBoard(revealAllMines(board, mineMapRef.current));
         window.umami?.track("game_over", { game: "minesweeper", result: "lost" });
         setGameStatus("lost");
+        playMinesweeperExplosion();
         return;
       }
 
@@ -276,7 +281,7 @@ export default function Minesweeper() {
     [board, gameStatus, startTimer]
   );
 
-  const smiley = gameStatus === "won" ? "B)" : gameStatus === "lost" ? "X(" : ":)";
+
 
   const diff = MINE_COUNT - flagCount;
   const formattedMines = diff < 0
@@ -295,6 +300,8 @@ export default function Minesweeper() {
         }}
       >
         <span
+          translate="no"
+          className="notranslate"
           style={{
             fontFamily: "'Press Start 2P', cursive",
             fontSize: "12px",
@@ -307,16 +314,64 @@ export default function Minesweeper() {
         >
           {formattedMines}
         </span>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={resetGame} style={{ fontSize: "16px", padding: "2px 6px", cursor: "pointer" }}>
-            {smiley}
-          </button>
-          <button onClick={() => setShowHelp(true)} style={{ fontSize: "11px", padding: "2px 5px", cursor: "pointer", fontFamily: "Tahoma, sans-serif" }}>
-            ?
-          </button>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+        {isTouchOrMobile ? (
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetGame(); }}
+              className="game-pixel-btn"
+              style={{
+                padding: "4px 8px",
+                fontSize: "14px",
+                lineHeight: 1,
+                background: "#c0c0c0",
+                color: "#000",
+                boxShadow: "inset 1.5px 1.5px 0 #fff, inset -1.5px -1.5px 0 #808080, 1px 1px 0 #000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: "32px",
+                height: "28px"
+              }}
+            >
+              {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
+              className="game-pixel-btn"
+              style={{
+                padding: "4px 8px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                lineHeight: 1,
+                background: "#c0c0c0",
+                color: "#000",
+                boxShadow: "inset 1.5px 1.5px 0 #fff, inset -1.5px -1.5px 0 #808080, 1px 1px 0 #000",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: "32px",
+                height: "28px",
+                fontFamily: "'Press Start 2P', cursive"
+              }}
+            >
+              ?
+            </button>
+          </div>
+        ) : (
+          /* Classic Desktop Style */
+          <div style={{ display: "flex", gap: 4 }}>
+            <button onClick={resetGame} style={{ fontSize: "16px", padding: "2px 6px", cursor: "pointer" }}>
+              {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
+            </button>
+            <button onClick={() => setShowHelp(true)} style={{ fontSize: "11px", padding: "2px 5px", cursor: "pointer", fontFamily: "Tahoma, sans-serif" }}>
+              ?
+            </button>
+          </div>
+        )}
+        <div translate="no" className="notranslate" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
           <span
+            translate="no"
+            className="notranslate"
             style={{
               fontFamily: "'Press Start 2P', cursive",
               fontSize: "12px",
@@ -330,40 +385,48 @@ export default function Minesweeper() {
             {String(Math.min(timer, 999)).padStart(3, "0")}
           </span>
           {bestTime > 0 && (
-            <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "6px", color: "#555", whiteSpace: "nowrap" }}>
+            <span translate="no" className="notranslate" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "6px", color: "#555", whiteSpace: "nowrap" }}>
               best {String(bestTime).padStart(3, "0")}s
             </span>
           )}
         </div>
       </div>
 
-      {/* Mode toggle — mobile only */}
-      {isNarrow && <div style={{ display: "flex", gap: "4px" }}>
-        <button
-          onClick={() => setFlagMode(false)}
-          style={{
-            flex: 1,
-            padding: "4px",
-            fontSize: "10px",
-            fontFamily: "Tahoma, sans-serif",
-            cursor: "pointer",
-            boxShadow: !flagMode ? "inset 1px 1px 0 #808080, inset -1px -1px 0 #fff" : undefined,
-            fontWeight: !flagMode ? "bold" : "normal",
-          }}
-        >⬜ Dig</button>
-        <button
-          onClick={() => setFlagMode(true)}
-          style={{
-            flex: 1,
-            padding: "4px",
-            fontSize: "10px",
-            fontFamily: "Tahoma, sans-serif",
-            cursor: "pointer",
-            boxShadow: flagMode ? "inset 1px 1px 0 #808080, inset -1px -1px 0 #fff" : undefined,
-            fontWeight: flagMode ? "bold" : "normal",
-          }}
-        >🚩 Flag</button>
-      </div>}
+      {/* Mode toggle — mobile/touch only */}
+      {isTouchOrMobile && (
+        <div className="flex gap-4 mt-1 mb-1 justify-center items-center w-full max-w-[280px] shrink-0">
+          <button
+            className="game-pixel-btn"
+            style={{
+              flex: 1,
+              padding: "6px 12px",
+              minWidth: "110px",
+              background: !flagMode ? "#1155aa" : "#555",
+              boxShadow: !flagMode ? "inset 2px 2px 0 rgba(255,255,255,0.4), 2px 2px 0 0 #000" : "2px 2px 0 0 #000",
+              fontWeight: "bold",
+              fontSize: "8px"
+            }}
+            onClick={() => setFlagMode(false)}
+          >
+            ⛏️ DIG
+          </button>
+          <button
+            className="game-pixel-btn"
+            style={{
+              flex: 1,
+              padding: "6px 12px",
+              minWidth: "110px",
+              background: flagMode ? "#cc3322" : "#555",
+              boxShadow: flagMode ? "inset 2px 2px 0 rgba(255,255,255,0.4), 2px 2px 0 0 #000" : "2px 2px 0 0 #000",
+              fontWeight: "bold",
+              fontSize: "8px"
+            }}
+            onClick={() => setFlagMode(true)}
+          >
+            🚩 FLAG
+          </button>
+        </div>
+      )}
 
       {/* Grid */}
       <div ref={wrapperRef} className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden">
@@ -458,6 +521,96 @@ export default function Minesweeper() {
               </div>
               <p style={{ margin: "0 0 4px" }}>• Each number = mines touching that cell</p>
               <p style={{ margin: 0 }}>• Reveal all safe cells to <strong>win</strong> 🎉</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Game Over / Victory Popups — Win98 Dialog Style */}
+      {gameStatus === "won" && (
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.45)", zIndex: 350,
+            pointerEvents: "all",
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div className="window" style={{ minWidth: 280, maxWidth: 340 }}>
+            <div className="title-bar">
+              <div className="title-bar-text">Minesweeper — Victory!</div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetGame(); }} />
+              </div>
+            </div>
+            <div className="window-body" style={{ padding: "16px 20px" }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
+                <span style={{ fontSize: 36, lineHeight: 1, flexShrink: 0 }}>🏆</span>
+                <div>
+                  <p style={{ margin: "0 0 8px", fontWeight: "bold", color: "green" }}>You cleared all mines!</p>
+                  <p style={{ margin: "0 0 2px" }}>
+                    Time: <strong>{timer} seconds</strong> ⏱️
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    Best: <strong>{bestTime > 0 ? `${bestTime}s` : `${timer}s`}</strong> ⭐
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  className="game-pixel-btn"
+                  style={{ background: "#2a6e2a" }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetGame(); }}
+                >
+                  Play Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gameStatus === "lost" && (
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.45)", zIndex: 350,
+            pointerEvents: "all",
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div className="window" style={{ minWidth: 280, maxWidth: 340 }}>
+            <div className="title-bar">
+              <div className="title-bar-text">Minesweeper — Game Over</div>
+              <div className="title-bar-controls">
+                <button aria-label="Close" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetGame(); }} />
+              </div>
+            </div>
+            <div className="window-body" style={{ padding: "16px 20px" }}>
+              <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
+                <span style={{ fontSize: 36, lineHeight: 1, flexShrink: 0 }}>💥</span>
+                <div>
+                  <p style={{ margin: "0 0 8px", fontWeight: "bold", color: "#cc3322" }}>Boom! stepped on a mine!</p>
+                  <p style={{ margin: "0 0 2px" }}>
+                    Score: <strong>Game Over</strong>
+                  </p>
+                  {bestTime > 0 && (
+                    <p style={{ margin: 0 }}>
+                      Best: <strong>{bestTime}s</strong> 🏆
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  className="game-pixel-btn"
+                  style={{ background: "#cc3322" }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetGame(); }}
+                >
+                  Try Again
+                </button>
+              </div>
             </div>
           </div>
         </div>

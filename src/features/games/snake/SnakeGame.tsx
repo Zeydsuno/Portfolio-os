@@ -41,6 +41,18 @@ export default function SnakeGame() {
   const [status, setStatus] = useState<GameStatus>("waiting");
   const [popups, setPopups] = useState<{ id: number; x: number; y: number; text: string; color: string }[]>([]);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+
+  useEffect(() => {
+    const checkLayout = () => {
+      const touch = window.innerWidth < 768 || window.innerHeight < 500 || ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+      const mobileLandscape = touch && window.innerHeight < 500;
+      setIsMobileLandscape(mobileLandscape);
+    };
+    checkLayout();
+    window.addEventListener("resize", checkLayout);
+    return () => window.removeEventListener("resize", checkLayout);
+  }, []);
 
   // Game state in refs to avoid re-renders each frame
   const snakeRef = useRef<Point[]>([{ x: 10, y: 10 }]);
@@ -340,7 +352,7 @@ export default function SnakeGame() {
 
 
   return (
-    <div className="flex flex-col items-center w-full h-full overflow-hidden">
+    <div className={`flex items-center justify-center w-full h-full overflow-hidden ${isMobileLandscape ? "flex-row p-1" : "flex-col p-2"}`}>
       <style>{`
         @keyframes snakeFloatUp {
           0% { transform: translateY(0) scale(1); opacity: 1; }
@@ -348,13 +360,22 @@ export default function SnakeGame() {
         }
       `}</style>
       
-      <div className="flex-1 w-full flex items-center justify-center min-h-0 p-2">
-        <div style={{ position: "relative", height: "100%", maxWidth: "100%", maxHeight: "100%", aspectRatio: "1/1" }}>
+      <div className="flex-1 h-full flex items-center justify-center min-h-0 min-w-0">
+        <div style={{ position: "relative", height: "100%", width: "100%", maxWidth: "100%", maxHeight: "100%", aspectRatio: "1/1", display: "flex", justifyContent: "center", alignItems: "center" }}>
           <canvas
             ref={canvasRef}
             width={CANVAS_W}
             height={CANVAS_H}
-            style={{ width: "100%", height: "100%", imageRendering: "pixelated", border: "2px inset", touchAction: "none" }}
+            style={{
+              width: isMobileLandscape ? "auto" : "100%",
+              height: isMobileLandscape ? "100%" : "100%",
+              maxWidth: "100%",
+              maxHeight: "100%",
+              aspectRatio: "1/1",
+              imageRendering: "pixelated",
+              border: "2px inset",
+              touchAction: "none"
+            }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           />
@@ -381,20 +402,103 @@ export default function SnakeGame() {
         </div>
       </div>
       
-      <div className="status-bar" style={{ width: "100%" }}>
-        <p className="status-bar-field">Score: {score}</p>
-        <p className="status-bar-field">
-          {status === "waiting" && (
-            <><span className="md:hidden">Tap to start</span><span className="hidden md:inline">Press Enter to start</span></>
+      <div className={`flex flex-col justify-center items-center shrink-0 ${isMobileLandscape ? "w-[160px] ml-2" : "w-full"}`}>
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "4px 6px",
+            background: "#c0c0c0",
+            border: "2px inset",
+            marginBottom: isMobileLandscape ? 4 : 8,
+          }}
+        >
+          {/* LCD Score Box */}
+          <div translate="no" className="notranslate" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+            <span style={{ fontSize: "6px", fontFamily: "'Press Start 2P', cursive", color: "#555" }}>SCORE</span>
+            <span
+              translate="no"
+              className="notranslate"
+              style={{
+                fontFamily: "'Press Start 2P', cursive",
+                fontSize: isMobileLandscape ? "7px" : "9px",
+                color: "#39ff14", // Neon Green LCD text!
+                background: "#000",
+                padding: "2px 4px",
+                minWidth: "36px",
+                textAlign: "center",
+                border: "1px inset #808080"
+              }}
+            >
+              {String(score).padStart(3, "0")}
+            </span>
+          </div>
+
+          {/* Interactive Start/Retry Action button */}
+          {status !== "playing" ? (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); startGame(); }}
+              className="game-pixel-btn"
+              style={{
+                padding: "2px 6px",
+                fontSize: "7px",
+                fontFamily: "'Press Start 2P', cursive",
+                fontWeight: "bold",
+                background: "#1155aa",
+                color: "#fff",
+                boxShadow: "inset 1px 1px 0 rgba(255,255,255,0.4), 1px 1px 0 #000",
+                height: "22px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              {status === "waiting" ? "START" : "RETRY"}
+            </button>
+          ) : (
+            <div
+              style={{
+                border: "1px inset #808080",
+                background: "#dfdfdf",
+                padding: "2px 4px",
+                fontSize: "6px",
+                fontFamily: "'Press Start 2P', cursive",
+                color: "#555",
+                height: "22px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              STEER
+            </div>
           )}
-          {status === "playing" && (
-            <><span className="md:hidden">Swipe to steer</span><span className="hidden md:inline">Arrow keys to steer</span></>
-          )}
-          {status === "gameover" && (
-            <><span className="md:hidden">Tap to retry</span><span className="hidden md:inline">Press Enter to retry</span></>
-          )}
-        </p>
-        <p className="status-bar-field" style={{ cursor: "pointer", userSelect: "none" }} onClick={() => setShowHelp(true)}>?</p>
+
+          {/* Consistent Help button */}
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
+            className="game-pixel-btn"
+            style={{
+              padding: "2px 4px",
+              fontSize: "10px",
+              fontWeight: "bold",
+              background: "#c0c0c0",
+              color: "#000",
+              boxShadow: "inset 1px 1px 0 #fff, inset -1px -1px 0 #808080, 1px 1px 0 #000",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: "24px",
+              height: "22px",
+              fontFamily: "'Press Start 2P', cursive"
+            }}
+          >
+            ?
+          </button>
+        </div>
+        <DPad onDirection={handleDPad} size={isMobileLandscape ? 44 : 72} gap={isMobileLandscape ? 4 : 6} />
       </div>
 
       {/* Help overlay */}
@@ -467,16 +571,20 @@ export default function SnakeGame() {
                 <div>
                   <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>You lose!</p>
                   <p style={{ margin: "0 0 2px" }}>
-                    Score: <strong>{score}</strong>
+                    Score: <strong translate="no" className="notranslate">{score}</strong>
                   </p>
                   <p style={{ margin: 0, color: highScore > 0 && score >= highScore ? "green" : undefined }}>
-                    Best: <strong>{highScore}</strong>
-                    {highScore > 0 && score >= highScore && " 🏆"}
+                    Best: <strong translate="no" className="notranslate">{highScore}</strong>
+                    <span translate="no" className="notranslate">{highScore > 0 && score >= highScore && " 🏆"}</span>
                   </p>
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <button onPointerDown={quitToMenu} style={{ minWidth: 88 }}>
+                <button
+                  className="game-pixel-btn"
+                  style={{ background: "#2a6e2a" }}
+                  onPointerDown={quitToMenu}
+                >
                   Play Again
                 </button>
               </div>
@@ -484,8 +592,6 @@ export default function SnakeGame() {
           </div>
         </div>
       )}
-
-      <DPad onDirection={handleDPad} />
     </div>
   );
 }

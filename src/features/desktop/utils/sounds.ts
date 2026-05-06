@@ -181,3 +181,65 @@ export function playSnakeDie() {
   tone(ac, 150, 0.1, 0.15, 0.2, "sawtooth");
   tone(ac, 80, 0.25, 0.2, 0.2, "sawtooth");
 }
+
+/** Low-frequency rumbling white-noise retro explosion sound for Minesweeper game over */
+export function playMinesweeperExplosion() {
+  if (isMuted()) return;
+  const ac = getCtx();
+  if (!ac) return;
+
+  const duration = 0.5; // seconds
+  const currentTime = ac.currentTime;
+
+  // 1. Crunchy 8-bit Bitcrushed Noise source (recreates lo-fi NES/GameBoy noise channel)
+  const bufferSize = ac.sampleRate * duration;
+  const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+  const data = buffer.getChannelData(0);
+  const bitReduction = 16; // Keep the same value for every 16 samples for a super crunchy 8-bit sound!
+  let lastVal = Math.random() * 2 - 1;
+  for (let i = 0; i < bufferSize; i++) {
+    if (i % bitReduction === 0) {
+      lastVal = Math.random() * 2 - 1;
+    }
+    data[i] = lastVal;
+  }
+
+  const noiseSource = ac.createBufferSource();
+  noiseSource.buffer = buffer;
+
+  const noiseFilter = ac.createBiquadFilter();
+  noiseFilter.type = "lowpass";
+  noiseFilter.frequency.setValueAtTime(1000, currentTime);
+  noiseFilter.frequency.exponentialRampToValueAtTime(100, currentTime + duration - 0.1);
+
+  const noiseGain = ac.createGain();
+  noiseGain.gain.setValueAtTime(0, currentTime);
+  noiseGain.gain.linearRampToValueAtTime(0.35, currentTime + 0.01);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, currentTime + duration);
+
+  noiseSource.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(ac.destination);
+
+  // 2. Heavy Sawtooth Tone Sweep (creates the explosive bass punch and "meat" of the rumble)
+  const osc = ac.createOscillator();
+  const oscGain = ac.createGain();
+
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(180, currentTime);
+  osc.frequency.linearRampToValueAtTime(30, currentTime + duration - 0.1);
+
+  oscGain.gain.setValueAtTime(0, currentTime);
+  oscGain.gain.linearRampToValueAtTime(0.2, currentTime + 0.01);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, currentTime + duration - 0.05);
+
+  osc.connect(oscGain);
+  oscGain.connect(ac.destination);
+
+  // Start both sources simultaneously for the ultimate retro blast!
+  noiseSource.start(currentTime);
+  noiseSource.stop(currentTime + duration);
+
+  osc.start(currentTime);
+  osc.stop(currentTime + duration);
+}

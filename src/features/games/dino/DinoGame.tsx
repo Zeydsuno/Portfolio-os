@@ -20,6 +20,17 @@ const FIXED_STEP = 1000 / 120; // ~8.33ms per physics tick — keeps gameplay fa
 export default function DinoGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [isTouchOrMobile, setIsTouchOrMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768 || window.innerHeight < 500 || ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+      setIsTouchOrMobile(mobile);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const statusRef   = useRef<Status>("waiting");
   const dinoYRef    = useRef(GROUND_Y - DINO_H);
@@ -510,22 +521,11 @@ export default function DinoGame() {
     };
   }, [jump, releaseJump, setDuck]);
 
-  const btnStyle: React.CSSProperties = {
-    padding: "10px 20px",
-    fontFamily: "'Press Start 2P', monospace",
-    fontSize: 9,
-    background: "#c0c0c0",
-    border: "2px solid",
-    borderColor: "#fff #808080 #808080 #fff",
-    cursor: "pointer",
-    userSelect: "none",
-    touchAction: "none",
-  };
 
   return (
     <div className="flex flex-col items-center w-full h-full overflow-hidden" style={{ background: "#c0c0c0", userSelect: "none", padding: 8 }}>
       <div className="flex-1 w-full flex items-center justify-center min-h-0">
-        <div style={{ position: "relative", height: "100%", maxWidth: "100%", maxHeight: "100%", aspectRatio: "600/150" }}>
+        <div style={{ position: "relative", width: "100%", maxWidth: "460px", aspectRatio: "560/190", boxSizing: "border-box" }}>
           <canvas
             ref={canvasRef}
             width={CANVAS_W}
@@ -547,23 +547,28 @@ export default function DinoGame() {
           />
         </div>
       </div>
-      <div className="flex gap-3 mt-3 shrink-0 justify-center">
+      <div className="flex gap-5 mt-3 pb-1 shrink-0 justify-center items-center">
+        {isTouchOrMobile && (
+          <>
+            <button
+              className="game-pixel-btn"
+              style={{ background: "#1155aa" }}
+              onPointerDown={() => setDuck(true)}
+              onPointerUp={() => setDuck(false)}
+              onPointerLeave={() => setDuck(false)}
+            >⬇ DUCK</button>
+            <button
+              className="game-pixel-btn"
+              style={{ background: "#cc3322" }}
+              onPointerDown={(e) => jump(e.timeStamp)}
+              onPointerUp={releaseJump}
+              onPointerLeave={releaseJump}
+            >⬆ JUMP</button>
+          </>
+        )}
         <button
-          className="flex md:hidden"
-          style={btnStyle}
-          onPointerDown={() => setDuck(true)}
-          onPointerUp={() => setDuck(false)}
-          onPointerLeave={() => setDuck(false)}
-        >⬇ DUCK</button>
-        <button
-          className="flex md:hidden"
-          style={btnStyle}
-          onPointerDown={(e) => jump(e.timeStamp)}
-          onPointerUp={releaseJump}
-          onPointerLeave={releaseJump}
-        >⬆ JUMP</button>
-        <button
-          style={{ ...btnStyle, padding: "10px 14px" }}
+          className="game-pixel-btn"
+          style={{ background: "#555", minWidth: "auto", padding: "10px 12px" }}
           onClick={() => setShowHelp(true)}
         >?</button>
       </div>

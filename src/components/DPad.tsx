@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type DPadDirection = "UP" | "DOWN" | "LEFT" | "RIGHT";
 
@@ -18,50 +18,40 @@ const ICONS: Record<DPadDirection, string> = {
 };
 
 export default function DPad({ onDirection, size = 72, gap = 6 }: DPadProps) {
-  const [pressed, setPressed] = useState<DPadDirection | null>(null);
+  const [isTouchOrMobile, setIsTouchOrMobile] = useState(false);
 
-  function btnStyle(d: DPadDirection) {
-    const isPressed = pressed === d;
-    return {
-      width: size,
-      height: size,
-      fontSize: size * 0.38,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      userSelect: "none" as const,
-      touchAction: "none" as const,
-      background: "#c0c0c0",
-      border: "2px solid",
-      borderColor: isPressed
-        ? "#808080 #ffffff #ffffff #808080"
-        : "#ffffff #808080 #808080 #ffffff",
-      paddingTop: isPressed ? 2 : 0,
-      paddingLeft: isPressed ? 2 : 0,
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768 || window.innerHeight < 500 || ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+      setIsTouchOrMobile(mobile);
     };
-  }
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
-  function handleDown(d: DPadDirection) {
-    setPressed(d);
-    onDirection(d);
-  }
+  const btnStyle: React.CSSProperties = {
+    width: size,
+    height: size,
+    minWidth: size,
+    fontSize: size * 0.38,
+    padding: 0,
+    background: "#2a2a3a",
+  };
 
-  function handleUp() {
-    setPressed(null);
-  }
+  if (!isTouchOrMobile) return null;
 
   return (
     <div
-      className="grid md:hidden"
+      className="grid"
       style={{ gridTemplateColumns: `repeat(3, ${size}px)`, gap, marginTop: 16 }}
     >
       <div />
-      <button style={btnStyle("UP")} onPointerDown={() => handleDown("UP")} onPointerUp={handleUp} onPointerLeave={handleUp}>{ICONS.UP}</button>
+      <button className="game-pixel-btn" style={btnStyle} onPointerDown={() => onDirection("UP")}>{ICONS.UP}</button>
       <div />
-      <button style={btnStyle("LEFT")} onPointerDown={() => handleDown("LEFT")} onPointerUp={handleUp} onPointerLeave={handleUp}>{ICONS.LEFT}</button>
-      <button style={btnStyle("DOWN")} onPointerDown={() => handleDown("DOWN")} onPointerUp={handleUp} onPointerLeave={handleUp}>{ICONS.DOWN}</button>
-      <button style={btnStyle("RIGHT")} onPointerDown={() => handleDown("RIGHT")} onPointerUp={handleUp} onPointerLeave={handleUp}>{ICONS.RIGHT}</button>
+      <button className="game-pixel-btn" style={btnStyle} onPointerDown={() => onDirection("LEFT")}>{ICONS.LEFT}</button>
+      <button className="game-pixel-btn" style={btnStyle} onPointerDown={() => onDirection("DOWN")}>{ICONS.DOWN}</button>
+      <button className="game-pixel-btn" style={btnStyle} onPointerDown={() => onDirection("RIGHT")}>{ICONS.RIGHT}</button>
     </div>
   );
 }

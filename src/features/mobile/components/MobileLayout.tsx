@@ -7,60 +7,33 @@ import MailContent from "@/features/portfolio/components/MailContent";
 import CVContent from "@/features/portfolio/components/CVContent";
 import SnakeGame from "@/features/games/snake/SnakeGame";
 import Minesweeper from "@/features/games/minesweeper/Minesweeper";
+import DinoGame from "@/features/games/dino/DinoGame";
+import SolitaireGame from "@/features/games/solitaire/SolitaireGame";
+import {
+  ICON_NOTEPAD, ICON_CV, ICON_COMPUTER, ICON_MAIL,
+  ICON_SNAKE, ICON_MINE, ICON_DINO, ICON_SOLITAIRE,
+} from "@/features/desktop/data/desktop-items";
 
-type SectionId = "about" | "cv" | "projects" | "contact" | "snake" | "minesweeper";
+type SectionId = "about" | "cv" | "projects" | "contact" | "snake" | "minesweeper" | "dino" | "solitaire";
 
 interface Section {
   id: SectionId;
   label: string;
   icon: string;
+  emoji: string;
   title: string;
   renderContent: () => React.ReactNode;
 }
 
 const SECTIONS: Section[] = [
-  {
-    id: "about",
-    label: "About",
-    icon: "📄",
-    title: "README.TXT",
-    renderContent: () => <ReadmeContent />,
-  },
-  {
-    id: "cv",
-    label: "CV",
-    icon: "🗂️",
-    title: "CV.TXT",
-    renderContent: () => <CVContent />,
-  },
-  {
-    id: "projects",
-    label: "Projects",
-    icon: "💾",
-    title: "Projects.exe",
-    renderContent: () => <ProjectsContent />,
-  },
-  {
-    id: "contact",
-    label: "Mail",
-    icon: "✉️",
-    title: "Mail.bat",
-    renderContent: () => <MailContent />,
-  },
-  {
-    id: "snake",
-    label: "Snake",
-    icon: "🐍",
-    title: "Snake.exe",
-    renderContent: () => <SnakeGame />,
-  },
-  {
-    id: "minesweeper",
-    label: "Mines",
-    icon: "💣",
-    title: "Minesweeper.exe",
-    renderContent: () => <Minesweeper />,
-  },
+  { id: "about",       label: "About",     icon: ICON_NOTEPAD,   emoji: "📄", title: "README.TXT",       renderContent: () => <ReadmeContent /> },
+  { id: "cv",          label: "CV",         icon: ICON_CV,        emoji: "🗂️", title: "CV.TXT",            renderContent: () => <CVContent /> },
+  { id: "projects",    label: "Projects",   icon: ICON_COMPUTER,  emoji: "💾", title: "Projects.exe",      renderContent: () => <ProjectsContent /> },
+  { id: "contact",     label: "Mail",       icon: ICON_MAIL,      emoji: "✉️", title: "Mail.bat",           renderContent: () => <MailContent /> },
+  { id: "snake",       label: "Snake",      icon: ICON_SNAKE,     emoji: "🐍", title: "Snake.exe",         renderContent: () => <SnakeGame /> },
+  { id: "minesweeper", label: "Mines",      icon: ICON_MINE,      emoji: "💣", title: "Minesweeper.exe",   renderContent: () => <Minesweeper /> },
+  { id: "dino",        label: "ZeydLost",   icon: ICON_DINO,      emoji: "🦖", title: "ZeydLost.exe",      renderContent: () => <DinoGame /> },
+  { id: "solitaire",   label: "Solitaire",  icon: ICON_SOLITAIRE, emoji: "🃏", title: "Solitaire.exe",     renderContent: () => <SolitaireGame /> },
 ];
 
 const FONT: React.CSSProperties = { fontFamily: "var(--win98-font)" };
@@ -100,7 +73,9 @@ export default function MobileLayout() {
       style={{
         ...FONT,
         backgroundColor: "#008080",
-        minHeight: "100dvh",
+        height: "100dvh",
+        maxHeight: "100dvh",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
       }}
@@ -124,6 +99,7 @@ export default function MobileLayout() {
 
       {/* Top bar — Win98 title bar style */}
       <div
+        className="mobile-landscape-hidden"
         style={{
           background: "linear-gradient(90deg, #000080, #1084d0)",
           padding: "6px 12px",
@@ -141,6 +117,7 @@ export default function MobileLayout() {
 
       {/* Desktop area */}
       <div
+        className="mobile-desktop-area"
         style={{
           flex: 1,
           padding: "10px",
@@ -152,6 +129,7 @@ export default function MobileLayout() {
       >
         {/* Icon row */}
         <div
+          className="mobile-icon-row"
           style={{
             display: "flex",
             gap: "8px",
@@ -178,7 +156,13 @@ export default function MobileLayout() {
                   active === s.id ? "rgba(0,0,128,0.5)" : "transparent",
               }}
             >
-              <span style={{ fontSize: "28px", lineHeight: 1 }}>{s.icon}</span>
+              <img
+                src={`data:image/svg+xml,${encodeURIComponent(s.icon)}`}
+                width={32}
+                height={32}
+                alt=""
+                style={{ imageRendering: "pixelated" }}
+              />
               <span
                 style={{
                   color: "#fff",
@@ -200,8 +184,9 @@ export default function MobileLayout() {
           style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
         >
           <div className="title-bar">
-            <div className="title-bar-text" style={{ fontSize: "9px" }}>
-              {section.icon} {section.title}
+            <div className="title-bar-text" style={{ fontSize: "9px", display: "flex", alignItems: "center", gap: 4 }}>
+              <img src={`data:image/svg+xml,${encodeURIComponent(section.icon)}`} width={12} height={12} alt="" style={{ imageRendering: "pixelated" }} />
+              {section.title}
             </div>
             <div className="title-bar-controls">
               <button aria-label="Minimize" style={{ cursor: "default" }} />
@@ -277,13 +262,16 @@ export default function MobileLayout() {
                   padding: "2px 6px",
                   whiteSpace: "nowrap",
                   fontWeight: active === s.id ? "bold" : "normal",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
                   boxShadow:
                     active === s.id
                       ? "inset 1px 1px 0 #808080, inset -1px -1px 0 #fff"
                       : undefined,
                 }}
               >
-                {s.icon} {s.label}
+                <img src={`data:image/svg+xml,${encodeURIComponent(s.icon)}`} width={12} height={12} alt="" style={{ imageRendering: "pixelated", flexShrink: 0 }} /> {s.label}
               </button>
             ))}
           </div>

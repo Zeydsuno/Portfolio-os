@@ -165,16 +165,16 @@ function MiniCard({ label, suit }: { label: string; suit: Suit }) {
 interface CardProps {
   card: Card;
   dragging?: boolean;
-  onMouseDown?: (e: React.MouseEvent) => void;
+  onPointerDown?: (e: React.PointerEvent) => void;
   onDoubleClick?: (e: React.MouseEvent) => void;
   style?: React.CSSProperties;
 }
 
-function CardView({ card, dragging, onMouseDown, onDoubleClick, style }: CardProps) {
+function CardView({ card, dragging, onPointerDown, onDoubleClick, style }: CardProps) {
   const color = RED.has(card.suit) ? "#cc0000" : "#000";
   return (
     <div
-      onMouseDown={onMouseDown}
+      onPointerDown={onPointerDown}
       onDoubleClick={onDoubleClick}
       style={{
         width: CARD_W,
@@ -189,6 +189,7 @@ function CardView({ card, dragging, onMouseDown, onDoubleClick, style }: CardPro
         boxShadow: dragging ? "3px 3px 8px rgba(0,0,0,0.5)" : "1px 1px 2px rgba(0,0,0,0.3)",
         flexShrink: 0,
         userSelect: "none",
+        touchAction: "none",
         boxSizing: "border-box",
         opacity: dragging ? 0.85 : 1,
         ...style,
@@ -236,7 +237,9 @@ export default function SolitaireGame() {
   const [drag, setDrag] = useState<DragState | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [bestMoves, setBestMoves] = useState(0);
+  const [scale, setScale] = useState(1);
 
+  const outerRef = useRef<HTMLDivElement>(null);
   const sessionStartRef = useRef<number>(0);
   const legMovesRef = useRef<number>(0);
   const bestMovesRef = useRef<number>(0);
@@ -249,7 +252,7 @@ export default function SolitaireGame() {
   // ── Drag handlers ────────────────────────────────────────────────────────
 
   const startDrag = useCallback((
-    e: React.MouseEvent,
+    e: React.PointerEvent,
     cards: Card[],
     from: From,
   ) => {
@@ -288,6 +291,20 @@ export default function SolitaireGame() {
     }
   }, [game.won, game.moves]);
 
+  useEffect(() => {
+    const el = outerRef.current;
+    if (!el) return;
+    const NATURAL_W = CARD_W * 7 + PILE_GAP * 6 + 16;
+    const NATURAL_H = 340; // natural height limit to fit layout nicely on small viewports
+    const ro = new ResizeObserver(([entry]) => {
+      const scaleX = entry.contentRect.width / NATURAL_W;
+      const scaleY = entry.contentRect.height / NATURAL_H;
+      setScale(Math.min(1, scaleX, scaleY));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const startNewGame = useCallback(() => {
     sessionStartRef.current = Date.now();
     legMovesRef.current = 0;
@@ -297,11 +314,11 @@ export default function SolitaireGame() {
   useEffect(() => {
     if (!drag) return;
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
       setDrag(d => d ? { ...d, ghostX: e.clientX, ghostY: e.clientY } : null);
     };
 
-    const onUp = (e: MouseEvent) => {
+    const onUp = (e: PointerEvent) => {
       setDrag(null);
       if (!drag) return;
 
@@ -337,11 +354,11 @@ export default function SolitaireGame() {
       // No valid drop — cards snap back (drag just clears)
     };
 
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
     };
   }, [drag, game]);
 
@@ -385,15 +402,16 @@ export default function SolitaireGame() {
 
   return (
     <div
+      ref={outerRef}
       style={{
         background: "#1a6b3a",
         width: "100%", height: "100%",
-        padding: 8,
-        boxSizing: "border-box",
-        display: "flex", flexDirection: "column",
-        gap: 8,
         overflow: "hidden",
         userSelect: "none",
+        position: "relative",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       {/* Win overlay */}
@@ -406,15 +424,29 @@ export default function SolitaireGame() {
           zIndex: 200, gap: 16,
         }}>
           <div style={{ ...FONT, fontSize: 14, color: "#ffff00" }}>You Win!</div>
-          <div style={{ ...FONT, fontSize: 9, color: "#fff" }}>{game.moves} moves</div>
+          <div style={{ ...FONT, fontSize: 9, color: "#fff" }}>
+            <span translate="no" className="notranslate">{game.moves}</span> moves
+          </div>
           {bestMoves > 0 && (
-            <div style={{ ...FONT, fontSize: 8, color: "#aaffaa" }}>Best: {bestMoves} moves</div>
+            <div style={{ ...FONT, fontSize: 8, color: "#aaffaa" }}>
+              Best: <span translate="no" className="notranslate">{bestMoves}</span> moves
+            </div>
           )}
           <button onClick={startNewGame} style={{ ...FONT, fontSize: 9, padding: "6px 14px", cursor: "pointer" }}>
             New Game
           </button>
         </div>
       )}
+
+      {/* Scaled content wrapper */}
+      <div style={{
+        padding: 8,
+        boxSizing: "border-box",
+        display: "flex", flexDirection: "column",
+        gap: 8,
+        width: CARD_W * 7 + PILE_GAP * 6 + 16,
+        ...(scale < 1 && { transform: `scale(${scale})`, transformOrigin: "center center" }),
+      }}>
 
       {/* Ghost card stack — portalled to body to escape .window-body zoom */}
       {drag && typeof document !== "undefined" && createPortal(
@@ -440,7 +472,7 @@ export default function SolitaireGame() {
         {game.stock.length > 0 ? (
           <CardView
             card={{ suit: "spades", value: 1, faceUp: false }}
-            onMouseDown={(e) => { e.stopPropagation(); }}
+            onPointerDown={(e) => { e.stopPropagation(); }}
             onDoubleClick={clickStock}
             style={{ cursor: "pointer" }}
           />
@@ -460,7 +492,7 @@ export default function SolitaireGame() {
             return (
               <CardView
                 card={card}
-                onMouseDown={(e) => startDrag(e, [card], from)}
+                onPointerDown={(e) => startDrag(e, [card], from)}
                 onDoubleClick={() => autoFoundation(from, card)}
               />
             );
@@ -481,7 +513,7 @@ export default function SolitaireGame() {
               return (
                 <CardView
                   card={card}
-                  onMouseDown={(e) => startDrag(e, [card], from)}
+                  onPointerDown={(e) => startDrag(e, [card], from)}
                 />
               );
             })() : (
@@ -518,7 +550,7 @@ export default function SolitaireGame() {
                       <CardView
                         card={card}
                         style={{ opacity: isDragged ? 0 : 1 }}
-                        onMouseDown={card.faceUp ? (e) => {
+                        onPointerDown={card.faceUp ? (e) => {
                           const from: From = { zone: "tableau", col: colIdx, cardIdx: ci };
                           startDrag(e, col.slice(ci), from);
                         } : undefined}
@@ -536,20 +568,30 @@ export default function SolitaireGame() {
       </div>
 
       {/* Status bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ ...FONT, fontSize: 7, color: "#c8ffc8" }}>Moves: {game.moves}</span>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button
-            onClick={() => setShowHelp(true)}
-            style={{ ...FONT, fontSize: 7, padding: "3px 8px", cursor: "pointer", border: "2px solid", borderColor: "#fff #808080 #808080 #fff", background: "#c0c0c0" }}
-          >?</button>
-          <button
-            onClick={startNewGame}
-            style={{ ...FONT, fontSize: 7, padding: "3px 8px", cursor: "pointer", border: "2px solid", borderColor: "#fff #808080 #808080 #fff", background: "#c0c0c0" }}
-          >New Game</button>
-        </div>
-        <span style={{ ...FONT, fontSize: 7, color: "#c8ffc8" }}>Stock: {game.stock.length}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 4px" }}>
+        <span style={{ ...FONT, fontSize: 8, color: "#c8ffc8" }}>
+          Moves: <span translate="no" className="notranslate">{game.moves}</span>
+        </span>
+        <span style={{ ...FONT, fontSize: 8, color: "#c8ffc8" }}>
+          Stock: <span translate="no" className="notranslate">{game.stock.length}</span>
+        </span>
       </div>
+
+      {/* Retro Mobile Action Buttons (Help and New Game) */}
+      <div className="flex gap-4 mt-2 justify-center items-center">
+        <button
+          className="game-pixel-btn"
+          style={{ background: "#555", minWidth: "50px", padding: "8px 12px", boxShadow: "2px 2px 0 0 #000" }}
+          onClick={() => setShowHelp(true)}
+        >?</button>
+        <button
+          className="game-pixel-btn"
+          style={{ background: "#1155aa", minWidth: "140px", padding: "8px 16px", boxShadow: "2px 2px 0 0 #000" }}
+          onClick={startNewGame}
+        >NEW GAME</button>
+      </div>
+
+      </div>{/* end scaled content wrapper */}
 
       {/* Help overlay */}
       {showHelp && (
