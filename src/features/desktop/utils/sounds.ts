@@ -1,6 +1,7 @@
 import { useDesktopStore } from "../store/desktop-store";
 
 let ctx: AudioContext | null = null;
+let unlocked = false;
 
 function getCtx(): AudioContext | null {
   try {
@@ -17,28 +18,61 @@ function getCtx(): AudioContext | null {
 export function unlockAudio() {
   const ac = getCtx();
   if (!ac) return;
-  ac.resume().catch(() => {});
-  try {
-    const buf = ac.createBuffer(1, 1, 22050);
-    const src = ac.createBufferSource();
-    src.buffer = buf;
-    src.connect(ac.destination);
-    src.start(0);
-  } catch {}
+  if (ac.state === "suspended") {
+    ac.resume().catch(() => {});
+  }
+  if (!unlocked) {
+    try {
+      const buf = ac.createBuffer(1, 1, 22050);
+      const src = ac.createBufferSource();
+      src.buffer = buf;
+      src.connect(ac.destination);
+      src.start(0);
+      unlocked = true;
+    } catch {}
+  }
 }
 
 if (typeof window !== "undefined") {
-  const unlock = () => {
-    unlockAudio();
-    window.removeEventListener("pointerdown", unlock);
-    window.removeEventListener("touchstart", unlock);
-    window.removeEventListener("click", unlock);
-    window.removeEventListener("keydown", unlock);
+  // 1. Global interaction listener to wake up AudioContext continuously
+  const wakeUpAudio = () => {
+    const ac = getCtx();
+    if (ac && ac.state === "suspended") {
+      unlockAudio();
+    }
   };
-  window.addEventListener("pointerdown", unlock, { passive: true });
-  window.addEventListener("touchstart", unlock, { passive: true });
-  window.addEventListener("click", unlock, { passive: true });
-  window.addEventListener("keydown", unlock, { passive: true });
+
+  // Use capture phase to ensure it runs before React synthetic events
+  const opts = { passive: true, capture: true };
+  window.addEventListener("pointerdown", wakeUpAudio, opts);
+  window.addEventListener("touchstart", wakeUpAudio, opts);
+  window.addEventListener("click", wakeUpAudio, opts);
+  window.addEventListener("keydown", wakeUpAudio, opts);
+
+  // 2. One-time heavy unlock (playing silent buffer on very first interaction)
+  const initialUnlock = () => {
+    unlockAudio();
+    window.removeEventListener("pointerdown", initialUnlock, true);
+    window.removeEventListener("touchstart", initialUnlock, true);
+    window.removeEventListener("click", initialUnlock, true);
+    window.removeEventListener("keydown", initialUnlock, true);
+  };
+  
+  window.addEventListener("pointerdown", initialUnlock, opts);
+  window.addEventListener("touchstart", initialUnlock, opts);
+  window.addEventListener("click", initialUnlock, opts);
+  window.addEventListener("keydown", initialUnlock, opts);
+
+  // 3. Handle visibility change (e.g. app comes back from background)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      unlocked = false; // Force play silent buffer on next touch to be safe
+    } else {
+      if (ctx && ctx.state === "running") {
+        ctx.suspend().catch(() => {});
+      }
+    }
+  });
 }
 
 function tone(

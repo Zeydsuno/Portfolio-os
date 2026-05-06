@@ -7,6 +7,16 @@
   --pixel-font: "Press Start 2P", cursive;
 }
 
+/* iOS Safari bulletproofing */
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* Prevents double-tap to zoom */
+}
+
+html, body {
+  overscroll-behavior: none; /* Prevents rubber-banding bounce effect */
+}
+
 body {
   margin: 0;
   font-family: var(--win98-font);
