@@ -358,7 +358,7 @@ export default function SnakeGame() {
 
 
   return (
-    <div className={`flex items-center justify-center w-full h-full overflow-hidden ${isMobileLandscape ? "flex-row p-1" : "flex-col p-2"}`}>
+    <div className={`flex items-center justify-center w-full flex-1 min-h-0 overflow-hidden ${isMobileLandscape ? "flex-row p-1" : "flex-col p-2"}`}>
       <style>{`
         @keyframes snakeFloatUp {
           0% { transform: translateY(0) scale(1); opacity: 1; }
@@ -366,7 +366,7 @@ export default function SnakeGame() {
         }
       `}</style>
       
-      <div className="flex-1 min-h-0 min-w-0 w-full h-full" style={{ position: "relative" }}>
+      <div className="flex-1 min-h-0 min-w-0 w-full" style={{ position: "relative" }}>
         <div style={{
           position: "absolute",
           inset: 0,

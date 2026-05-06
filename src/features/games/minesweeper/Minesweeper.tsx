@@ -172,10 +172,13 @@ export default function Minesweeper() {
     return () => observer.disconnect();
   }, []);
 
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768 || window.innerHeight < 500 || ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
       setIsTouchOrMobile(mobile);
+      setIsMobileLandscape(mobile && window.innerHeight < 500);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -289,86 +292,18 @@ export default function Minesweeper() {
     : String(diff).padStart(3, "0");
 
   return (
-    <div className="flex flex-col items-center gap-1 w-full h-full overflow-hidden" style={{ padding: "4px" }}>
-      {/* Header: mine counter, smiley, timer */}
-      <div
-        className="flex items-center justify-between w-full"
-        style={{
-          padding: "4px 8px",
-          background: "#c0c0c0",
-          border: "2px inset",
-        }}
-      >
-        <span
-          translate="no"
-          className="notranslate"
+    <div className={`flex items-center gap-2 w-full h-full overflow-hidden ${isMobileLandscape ? 'flex-row justify-center' : 'flex-col'}`} style={{ padding: "4px" }}>
+      {/* Controls Container */}
+      <div className={`flex flex-col gap-1 shrink-0 ${isMobileLandscape ? 'w-[160px]' : 'w-full max-w-[400px]'}`}>
+        {/* Header: mine counter, smiley, timer */}
+        <div
+          className={`flex items-center justify-between w-full ${isMobileLandscape ? 'flex-col gap-2 py-2' : ''}`}
           style={{
-            fontFamily: "'Press Start 2P', cursive",
-            fontSize: "12px",
-            color: "#ff0000",
-            background: "#000",
-            padding: "2px 4px",
-            minWidth: "40px",
-            textAlign: "center",
+            padding: isMobileLandscape ? "8px 4px" : "4px 8px",
+            background: "#c0c0c0",
+            border: "2px inset",
           }}
         >
-          {formattedMines}
-        </span>
-        {isTouchOrMobile ? (
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetGame(); }}
-              className="game-pixel-btn"
-              style={{
-                padding: "4px 8px",
-                fontSize: "14px",
-                lineHeight: 1,
-                background: "#c0c0c0",
-                color: "#000",
-                boxShadow: "inset 1.5px 1.5px 0 #fff, inset -1.5px -1.5px 0 #808080, 1px 1px 0 #000",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minWidth: "32px",
-                height: "28px"
-              }}
-            >
-              {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
-            </button>
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
-              className="game-pixel-btn"
-              style={{
-                padding: "4px 8px",
-                fontSize: "12px",
-                fontWeight: "bold",
-                lineHeight: 1,
-                background: "#c0c0c0",
-                color: "#000",
-                boxShadow: "inset 1.5px 1.5px 0 #fff, inset -1.5px -1.5px 0 #808080, 1px 1px 0 #000",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minWidth: "32px",
-                height: "28px",
-                fontFamily: "'Press Start 2P', cursive"
-              }}
-            >
-              ?
-            </button>
-          </div>
-        ) : (
-          /* Classic Desktop Style */
-          <div style={{ display: "flex", gap: 4 }}>
-            <button onClick={resetGame} style={{ fontSize: "16px", padding: "2px 6px", cursor: "pointer" }}>
-              {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
-            </button>
-            <button onClick={() => setShowHelp(true)} style={{ fontSize: "11px", padding: "2px 5px", cursor: "pointer", fontFamily: "Tahoma, sans-serif" }}>
-              ?
-            </button>
-          </div>
-        )}
-        <div translate="no" className="notranslate" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
           <span
             translate="no"
             className="notranslate"
@@ -382,51 +317,124 @@ export default function Minesweeper() {
               textAlign: "center",
             }}
           >
-            {String(Math.min(timer, 999)).padStart(3, "0")}
+            {formattedMines}
           </span>
-          {bestTime > 0 && (
-            <span translate="no" className="notranslate" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "6px", color: "#555", whiteSpace: "nowrap" }}>
-              best {String(bestTime).padStart(3, "0")}s
-            </span>
+          {isTouchOrMobile ? (
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); resetGame(); }}
+                className="game-pixel-btn"
+                style={{
+                  padding: "4px 8px",
+                  fontSize: "14px",
+                  lineHeight: 1,
+                  background: "#c0c0c0",
+                  color: "#000",
+                  boxShadow: "inset 1.5px 1.5px 0 #fff, inset -1.5px -1.5px 0 #808080, 1px 1px 0 #000",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: "32px",
+                  height: "28px"
+                }}
+              >
+                {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowHelp(true); }}
+                className="game-pixel-btn"
+                style={{
+                  padding: "4px 8px",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  lineHeight: 1,
+                  background: "#c0c0c0",
+                  color: "#000",
+                  boxShadow: "inset 1.5px 1.5px 0 #fff, inset -1.5px -1.5px 0 #808080, 1px 1px 0 #000",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: "32px",
+                  height: "28px",
+                  fontFamily: "'Press Start 2P', cursive"
+                }}
+              >
+                ?
+              </button>
+            </div>
+          ) : (
+            /* Classic Desktop Style */
+            <div style={{ display: "flex", gap: 4 }}>
+              <button onClick={resetGame} style={{ fontSize: "16px", padding: "2px 6px", cursor: "pointer" }}>
+                {gameStatus === "won" ? "😎" : gameStatus === "lost" ? "😵" : "🙂"}
+              </button>
+              <button onClick={() => setShowHelp(true)} style={{ fontSize: "11px", padding: "2px 5px", cursor: "pointer", fontFamily: "Tahoma, sans-serif" }}>
+                ?
+              </button>
+            </div>
           )}
+          <div translate="no" className="notranslate" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+            <span
+              translate="no"
+              className="notranslate"
+              style={{
+                fontFamily: "'Press Start 2P', cursive",
+                fontSize: "12px",
+                color: "#ff0000",
+                background: "#000",
+                padding: "2px 4px",
+                minWidth: "40px",
+                textAlign: "center",
+              }}
+            >
+              {String(Math.min(timer, 999)).padStart(3, "0")}
+            </span>
+            {bestTime > 0 && (
+              <span translate="no" className="notranslate" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "6px", color: "#555", whiteSpace: "nowrap" }}>
+                best {String(bestTime).padStart(3, "0")}s
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Mode toggle — mobile/touch only */}
-      {isTouchOrMobile && (
-        <div className="flex gap-4 mt-1 mb-1 justify-center items-center w-full max-w-[280px] shrink-0">
-          <button
-            className="game-pixel-btn"
-            style={{
-              flex: 1,
-              padding: "6px 12px",
-              minWidth: "110px",
-              background: !flagMode ? "#1155aa" : "#555",
-              boxShadow: !flagMode ? "inset 2px 2px 0 rgba(255,255,255,0.4), 2px 2px 0 0 #000" : "2px 2px 0 0 #000",
-              fontWeight: "bold",
-              fontSize: "8px"
-            }}
-            onClick={() => setFlagMode(false)}
-          >
-            ⛏️ DIG
-          </button>
-          <button
-            className="game-pixel-btn"
-            style={{
-              flex: 1,
-              padding: "6px 12px",
-              minWidth: "110px",
-              background: flagMode ? "#cc3322" : "#555",
-              boxShadow: flagMode ? "inset 2px 2px 0 rgba(255,255,255,0.4), 2px 2px 0 0 #000" : "2px 2px 0 0 #000",
-              fontWeight: "bold",
-              fontSize: "8px"
-            }}
-            onClick={() => setFlagMode(true)}
-          >
-            🚩 FLAG
-          </button>
-        </div>
-      )}
+        {/* Mode toggle — mobile/touch only */}
+        {isTouchOrMobile && (
+          <div className={`flex justify-center items-center w-full shrink-0 ${isMobileLandscape ? 'flex-col gap-2' : 'flex-row gap-4 mt-1 mb-1 max-w-[280px] mx-auto'}`}>
+            <button
+              className="game-pixel-btn"
+              style={{
+                flex: isMobileLandscape ? "none" : 1,
+                width: isMobileLandscape ? "100%" : "auto",
+                padding: "6px 12px",
+                minWidth: "110px",
+                background: !flagMode ? "#1155aa" : "#555",
+                boxShadow: !flagMode ? "inset 2px 2px 0 rgba(255,255,255,0.4), 2px 2px 0 0 #000" : "2px 2px 0 0 #000",
+                fontWeight: "bold",
+                fontSize: "8px"
+              }}
+              onClick={() => setFlagMode(false)}
+            >
+              ⛏️ DIG
+            </button>
+            <button
+              className="game-pixel-btn"
+              style={{
+                flex: isMobileLandscape ? "none" : 1,
+                width: isMobileLandscape ? "100%" : "auto",
+                padding: "6px 12px",
+                minWidth: "110px",
+                background: flagMode ? "#cc3322" : "#555",
+                boxShadow: flagMode ? "inset 2px 2px 0 rgba(255,255,255,0.4), 2px 2px 0 0 #000" : "2px 2px 0 0 #000",
+                fontWeight: "bold",
+                fontSize: "8px"
+              }}
+              onClick={() => setFlagMode(true)}
+            >
+              🚩 FLAG
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Grid */}
       <div ref={wrapperRef} className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden">

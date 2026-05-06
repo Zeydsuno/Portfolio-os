@@ -544,28 +544,28 @@ export default function DinoGame() {
           />
         </div>
       </div>
-      <div className="flex gap-5 mt-3 pb-1 shrink-0 justify-center items-center">
+      <div className="flex gap-3 mt-2 pb-1 shrink-0 justify-center items-center w-full px-2">
         {isTouchOrMobile && (
           <>
             <button
               className="game-pixel-btn"
-              style={{ background: "#1155aa" }}
-              onPointerDown={() => setDuck(true)}
-              onPointerUp={() => setDuck(false)}
-              onPointerLeave={() => setDuck(false)}
+              style={{ flex: 1, maxWidth: "160px", padding: "8px", background: "#1155aa", touchAction: "none", userSelect: "none", WebkitUserSelect: "none" }}
+              onPointerDown={(e) => { e.preventDefault(); setDuck(true); }}
+              onPointerUp={(e) => { e.preventDefault(); setDuck(false); }}
+              onPointerLeave={(e) => { e.preventDefault(); setDuck(false); }}
             >⬇ DUCK</button>
             <button
               className="game-pixel-btn"
-              style={{ background: "#cc3322" }}
-              onPointerDown={(e) => jump(e.timeStamp)}
-              onPointerUp={releaseJump}
-              onPointerLeave={releaseJump}
+              style={{ flex: 1, maxWidth: "160px", padding: "8px", background: "#cc3322", touchAction: "none", userSelect: "none", WebkitUserSelect: "none" }}
+              onPointerDown={(e) => { e.preventDefault(); jump(e.timeStamp); }}
+              onPointerUp={(e) => { e.preventDefault(); releaseJump(); }}
+              onPointerLeave={(e) => { e.preventDefault(); releaseJump(); }}
             >⬆ JUMP</button>
           </>
         )}
         <button
           className="game-pixel-btn"
-          style={{ background: "#555", minWidth: "auto", padding: "10px 12px" }}
+          style={{ background: "#555", minWidth: "40px", padding: "8px" }}
           onClick={() => setShowHelp(true)}
         >?</button>
       </div>

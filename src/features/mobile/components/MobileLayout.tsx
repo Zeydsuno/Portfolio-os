@@ -206,6 +206,7 @@ export default function MobileLayout() {
               minHeight: 0,
               fontFamily: "Tahoma, sans-serif",
               fontSize: "12px",
+              ...(isGame && { display: "flex", flexDirection: "column" }),
             }}
           >
             {section.renderContent()}
