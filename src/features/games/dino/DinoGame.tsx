@@ -18,7 +18,8 @@ import { gameState } from "./gameState";
 const FIXED_STEP = 1000 / 120; // ~8.33ms per physics tick — keeps gameplay fast and identical on 60/144/240Hz
 
 export default function DinoGame() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef     = useRef<HTMLCanvasElement>(null); // background: sky, stars, clouds, HUD
+  const gameCanvasRef = useRef<HTMLCanvasElement>(null); // game elements: dino, obstacles, ground
   const [showHelp, setShowHelp] = useState(false);
   const [isTouchOrMobile, setIsTouchOrMobile] = useState(false);
 
@@ -37,9 +38,9 @@ export default function DinoGame() {
   const dinoVYRef   = useRef(0);
   const onGroundRef = useRef(true);
   const isDuckRef       = useRef(false);
-  const jumpHeldRef     = useRef(false);  // is jump button currently held
-  const jumpBoostRef    = useRef(0);      // boost frames remaining
-  const jumpHoldFrameRef = useRef(0);     // frames held so far (for threshold)
+  const jumpHeldRef     = useRef(false);
+  const jumpBoostRef    = useRef(0);
+  const jumpHoldFrameRef = useRef(0);
   const cactiRef        = useRef<Cactus[]>([]);
   const pterosRef       = useRef<Pterodactyl[]>([]);
   const cloudsRef       = useRef<Cloud[]>([]);
@@ -78,11 +79,13 @@ export default function DinoGame() {
   }, []);
 
   const draw = useCallback(() => {
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-    const st = statusRef.current;
+    const ctx     = canvasRef.current?.getContext("2d");
+    const gameCtx = gameCanvasRef.current?.getContext("2d");
+    if (!ctx || !gameCtx) return;
+    const st    = statusRef.current;
     const phase = nightPhaseRef.current;
 
+    // === MAIN CANVAS: background + sky + HUD (never filtered) ===
     const bgR = Math.round(208 - (208 - 17) * phase);
     const bgG = Math.round(232 - (232 - 17) * phase);
     const bgB = Math.round(200 - (200 - 17) * phase);
@@ -94,38 +97,31 @@ export default function DinoGame() {
     if (moonRef.current) drawMoon(ctx, moonRef.current, phase);
     for (const c of cloudsRef.current) drawCloud(ctx, c, phase);
     for (const t of tumbleweedsRef.current) drawTumbleweed(ctx, t);
-    
-    // Update CSS Dust overlay
+
+    // Dust overlay
     if (dustOverlayRef.current) {
-      dustOffsetRef.current -= speedRef.current * 1.2; // Move slightly faster than ground
+      dustOffsetRef.current -= speedRef.current * 1.2;
       dustOverlayRef.current.style.backgroundPosition = `${dustOffsetRef.current}px 0px`;
       dustOverlayRef.current.style.opacity = Math.max(0, 1 - phase).toString();
     }
 
-    // Use abrupt filter switch but colorize it to Neon Cyan instead of white
-    if (phase > 0.5) {
-      // invert(1) -> white, sepia(1) -> tan, saturate(5) -> vibrant, hue-rotate(150deg) -> cyan
-      ctx.filter = `invert(1) sepia(1) saturate(5) hue-rotate(150deg) brightness(1.2)`;
-    } else {
-      ctx.filter = "none";
-    }
+    // === GAME CANVAS: ground + obstacles + dino ===
+    // CSS filter applied to this canvas element — works on all browsers including iOS Safari
+    gameCtx.clearRect(0, 0, CANVAS_W, CANVAS_H);
 
     // Ground
-    ctx.fillStyle = "#555";
-    ctx.fillRect(0, GROUND_Y, CANVAS_W, 2);
-    ctx.fillStyle = "#777";
+    gameCtx.fillStyle = "#555";
+    gameCtx.fillRect(0, GROUND_Y, CANVAS_W, 2);
+    gameCtx.fillStyle = "#777";
     const gOff = gndOffRef.current % 30;
     for (let x = -gOff; x < CANVAS_W; x += 30) {
-      ctx.fillRect(x, GROUND_Y + 4, 14, 3);
+      gameCtx.fillRect(x, GROUND_Y + 4, 14, 3);
     }
 
-    // Cacti
-    for (const c of cactiRef.current) drawCactus(ctx, c);
+    for (const c of cactiRef.current) drawCactus(gameCtx, c);
+    for (const p of pterosRef.current) drawPterodactyl(gameCtx, p, bugSpriteRef.current);
 
-    // Pterodactyls
-    for (const p of pterosRef.current) drawPterodactyl(ctx, p, bugSpriteRef.current);
-
-    // Dino sprite
+    // Dino
     const sprite = spriteRef.current;
     let fi: number;
     if (st === "gameover") fi = 4;
@@ -134,16 +130,21 @@ export default function DinoGame() {
     else fi = Math.floor(animFrameRef.current / 12) % 2 === 0 ? 0 : 1;
 
     if (sprite) {
-      ctx.drawImage(sprite, fi * FRAME_W, 0, FRAME_W, FRAME_H, DINO_X, dinoYRef.current, DINO_W, DINO_H);
+      gameCtx.drawImage(sprite, fi * FRAME_W, 0, FRAME_W, FRAME_H, DINO_X, dinoYRef.current, DINO_W, DINO_H);
     } else {
-      ctx.fillStyle = "#000080";
-      ctx.fillRect(DINO_X, dinoYRef.current, DINO_W, DINO_H);
+      gameCtx.fillStyle = "#000080";
+      gameCtx.fillRect(DINO_X, dinoYRef.current, DINO_W, DINO_H);
     }
 
-    ctx.filter = "none";
+    // Apply CSS filter to canvas element — compatible with iOS Safari (unlike ctx.filter)
+    if (gameCanvasRef.current) {
+      gameCanvasRef.current.style.filter = phase > 0.5
+        ? "invert(1) sepia(1) saturate(5) hue-rotate(150deg) brightness(1.2)"
+        : "none";
+    }
 
-    // HUD
-    const hudC = Math.round(51 + (255 - 51) * phase); // #333 to pure #fff
+    // === HUD on main canvas (above game canvas, no cyan tint) ===
+    const hudC = Math.round(51 + (255 - 51) * phase);
     ctx.fillStyle = `rgb(${hudC}, ${hudC}, ${hudC})`;
     ctx.font = "8px 'Press Start 2P', monospace";
     ctx.textAlign = "right";
@@ -191,13 +192,12 @@ export default function DinoGame() {
     gndOffRef.current  = 0;
     startDinoBgm("", "/music/High_Noon_Sprint.mp3", BASE_SPEED, BASE_SPEED);
     spawnTsRef.current = ts;
-    pteroSpawnTsRef.current = ts + 4000; // first ptero after 4s
+    pteroSpawnTsRef.current = ts + 4000;
     lastTsRef.current  = -1;
     accumRef.current   = 0;
     statusRef.current  = "playing";
   }, []);
 
-  // Called on press-down: start a jump with small initial velocity
   const jump = useCallback((ts: number) => {
     if (statusRef.current !== "playing") {
       startGame(ts);
@@ -214,7 +214,6 @@ export default function DinoGame() {
     }
   }, [startGame]);
 
-  // Called on release: stop boosting
   const releaseJump = useCallback(() => {
     jumpHeldRef.current  = false;
     jumpBoostRef.current = 0;
@@ -236,7 +235,7 @@ export default function DinoGame() {
     }
     dinoVYRef.current += GRAVITY;
     dinoYRef.current  += dinoVYRef.current;
-    
+
     if (dinoYRef.current < 0) {
       dinoYRef.current  = 0;
       dinoVYRef.current = 0;
@@ -244,7 +243,7 @@ export default function DinoGame() {
       jumpBoostRef.current  = 0;
       jumpHoldFrameRef.current = 0;
     }
-    
+
     if (dinoYRef.current >= GROUND_Y - DINO_H) {
       dinoYRef.current  = GROUND_Y - DINO_H;
       dinoVYRef.current = 0;
@@ -260,7 +259,7 @@ export default function DinoGame() {
       isNightRef.current = !isNightRef.current;
       nextPhaseScoreRef.current = gameState.getScore() + 1000 + Math.random() * 500;
     }
-    
+
     const targetNight = isNightRef.current ? 1 : 0;
     nightPhaseRef.current += (targetNight - nightPhaseRef.current) * 0.02;
 
@@ -277,7 +276,6 @@ export default function DinoGame() {
       .map(c => ({ ...c, x: c.x - speedRef.current * c.speedMultiplier }))
       .filter(c => c.x + c.width > 0);
 
-    // Spawn Tumbleweeds during the day occasionally
     if (targetNight === 0 && Math.random() < 0.003 && tumbleweedsRef.current.length < 1) {
       const size = 6 + Math.random() * 4;
       tumbleweedsRef.current.push({
@@ -285,33 +283,26 @@ export default function DinoGame() {
         y: GROUND_Y - size - 10,
         size,
         rotation: 0,
-        speed: 1.1 + Math.random() * 0.4, // Rolls slightly faster than ground
-        vy: 0 // Start falling
+        speed: 1.1 + Math.random() * 0.4,
+        vy: 0
       });
     }
 
     tumbleweedsRef.current = tumbleweedsRef.current
       .map(t => {
         t.x -= speedRef.current * t.speed;
-        t.rotation -= 0.1 * t.speed; 
-        
-        // Real physics gravity
-        t.vy += 0.4; // Gravity pull
+        t.rotation -= 0.1 * t.speed;
+        t.vy += 0.4;
         t.y += t.vy;
-        
-        // Bounce off ground
         if (t.y >= GROUND_Y - t.size) {
           t.y = GROUND_Y - t.size;
-          // Dampen velocity and bounce up
           t.vy = - (2 + Math.random() * 2);
         }
-        
         return t;
       })
       .filter(t => t.x + t.size > -10);
 
     if (targetNight === 1) {
-      // Pre-populate the sky with stars when night begins
       if (starsRef.current.length === 0) {
         for (let i = 0; i < 25; i++) {
           starsRef.current.push({
@@ -322,8 +313,7 @@ export default function DinoGame() {
           });
         }
       }
-      
-      // Spawn occasionally on the right edge to replace ones that drift off
+
       if (Math.random() < 0.02 && starsRef.current.length < 35) {
         starsRef.current.push({
           x: CANVAS_W + 10,
@@ -333,24 +323,23 @@ export default function DinoGame() {
         });
       }
 
-      // Spawn shooting stars
       if (Math.random() < 0.005 && shootingStarsRef.current.length < 2) {
         shootingStarsRef.current.push({
           x: CANVAS_W + 10,
           y: Math.random() * (GROUND_Y - 80),
           length: 15 + Math.random() * 20,
-          speedX: -(4 + Math.random() * 4), // Fast to the left
-          speedY: 1 + Math.random() * 2,    // Downward angle
+          speedX: -(4 + Math.random() * 4),
+          speedY: 1 + Math.random() * 2,
           opacity: 0.5 + Math.random() * 0.5,
         });
       }
 
       if (!moonRef.current) moonRef.current = { x: CANVAS_W + 30, y: 30 + Math.random() * 20, phase: 0 };
     }
-    
+
     if (targetNight === 0 && nightPhaseRef.current < 0.01) {
       moonRef.current = null;
-      starsRef.current = []; // Clear stars when day arrives
+      starsRef.current = [];
       shootingStarsRef.current = [];
     }
 
@@ -361,7 +350,7 @@ export default function DinoGame() {
     shootingStarsRef.current = shootingStarsRef.current
       .map(s => ({ ...s, x: s.x + s.speedX, y: s.y + s.speedY }))
       .filter(s => s.x + s.length > 0 && s.y - s.length < GROUND_Y);
-      
+
     if (moonRef.current) {
       moonRef.current.x -= speedRef.current * 0.01;
     }
@@ -502,7 +491,7 @@ export default function DinoGame() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" || e.code === "ArrowUp") {
         e.preventDefault();
-        if (!e.repeat) jump(performance.now()); // ignore key-repeat events
+        if (!e.repeat) jump(performance.now());
       }
       if (e.code === "ArrowDown") {
         e.preventDefault();
@@ -525,24 +514,32 @@ export default function DinoGame() {
   return (
     <div className="flex flex-col items-center w-full h-full overflow-hidden" style={{ background: "#c0c0c0", userSelect: "none", padding: 8 }}>
       <div className="flex-1 w-full flex items-center justify-center min-h-0">
-        <div style={{ position: "relative", width: "100%", maxWidth: "460px", aspectRatio: "560/190", boxSizing: "border-box" }}>
+        <div style={{ position: "relative", width: "100%", maxWidth: "460px", aspectRatio: "560/190", boxSizing: "border-box", border: "2px inset #808080" }}>
+          {/* Background canvas: sky, stars, moon, clouds, tumbleweeds, HUD */}
           <canvas
             ref={canvasRef}
             width={CANVAS_W}
             height={CANVAS_H}
-            style={{ width: "100%", height: "100%", imageRendering: "pixelated", border: "2px inset #808080", cursor: "pointer", display: "block", touchAction: "none" }}
+            style={{ width: "100%", height: "100%", imageRendering: "pixelated", display: "block" }}
+          />
+          {/* Game canvas: dino, obstacles, ground — CSS filter applied here for iOS Safari compatibility */}
+          <canvas
+            ref={gameCanvasRef}
+            width={CANVAS_W}
+            height={CANVAS_H}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", imageRendering: "pixelated", cursor: "pointer", touchAction: "none" }}
             onPointerDown={(e) => jump(e.timeStamp)}
             onPointerUp={releaseJump}
             onPointerLeave={releaseJump}
           />
-          <div 
+          <div
             ref={dustOverlayRef}
             className="absolute inset-0 pointer-events-none"
-            style={{ 
+            style={{
               backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect x='10' y='120' width='4' height='2' fill='%23777777' fill-opacity='0.8'/%3E%3Crect x='50' y='135' width='5' height='2' fill='%23777777' fill-opacity='0.6'/%3E%3Crect x='90' y='125' width='3' height='2' fill='%23777777' fill-opacity='0.9'/%3E%3Crect x='130' y='140' width='6' height='2' fill='%23777777' fill-opacity='0.5'/%3E%3Crect x='30' y='130' width='4' height='2' fill='%23777777' fill-opacity='0.7'/%3E%3Crect x='110' y='115' width='5' height='2' fill='%23777777' fill-opacity='0.6'/%3E%3C/svg%3E\")",
               backgroundRepeat: "repeat",
               backgroundSize: "contain",
-              opacity: 1 
+              opacity: 1
             }}
           />
         </div>
@@ -573,7 +570,6 @@ export default function DinoGame() {
         >?</button>
       </div>
 
-      {/* Help overlay */}
       {showHelp && <DinoHelpModal onClose={() => setShowHelp(false)} />}
     </div>
   );

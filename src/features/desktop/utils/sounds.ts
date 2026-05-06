@@ -12,10 +12,19 @@ function getCtx(): AudioContext | null {
   }
 }
 
-/** Call during a user gesture (e.g. game start) to unlock AudioContext on iOS Safari */
+/** Call during a user gesture to unlock AudioContext on iOS Safari.
+ *  Playing a 1-sample silent buffer is the only reliable unlock mechanism. */
 export function unlockAudio() {
   const ac = getCtx();
-  if (ac && ac.state === "suspended") ac.resume().catch(() => {});
+  if (!ac) return;
+  ac.resume().catch(() => {});
+  try {
+    const buf = ac.createBuffer(1, 1, 22050);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.connect(ac.destination);
+    src.start(0);
+  } catch {}
 }
 
 function tone(
