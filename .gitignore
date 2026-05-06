@@ -50,3 +50,7 @@ AGENTS.md
 
 # internal docs
 docs/
+
+
+.py
+scripts/cut_music.py

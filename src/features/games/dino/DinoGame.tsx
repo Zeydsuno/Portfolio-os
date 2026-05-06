@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { playDinoJump, playDinoDie, playDinoPoint, playDinoBgmStep } from "@/features/desktop/utils/sounds";
+import { playDinoJump, playDinoDie, playDinoPoint, startDinoBgm, stopDinoBgm } from "@/features/desktop/utils/sounds";
 
 import { Status, Cactus, Pterodactyl, Cloud, Star, ShootingStar, Tumbleweed } from "./types";
 import {
@@ -12,6 +12,8 @@ import {
 } from "./constants";
 import { drawPterodactyl, drawCactus, drawCloud, drawStar, drawMoon, drawShootingStar, drawTumbleweed } from "./renderer";
 import { DinoHelpModal } from "./DinoHelpModal";
+
+const FIXED_STEP = 1000 / 120; // ~8.33ms per physics tick — keeps gameplay fast and identical on 60/144/240Hz
 
 export default function DinoGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,7 +38,7 @@ export default function DinoGame() {
   const dustOffsetRef   = useRef(0);
   const nightPhaseRef   = useRef(0);
   const isNightRef      = useRef(false);
-  const nextPhaseScoreRef = useRef(300 + Math.random() * 200);
+  const nextPhaseScoreRef = useRef(1000 + Math.random() * 500);
   const scoreRef        = useRef(0);
   const hiRef           = useRef(
     typeof window !== "undefined"
@@ -46,10 +48,11 @@ export default function DinoGame() {
   const speedRef        = useRef(BASE_SPEED);
   const animFrameRef    = useRef(0);
   const gndOffRef       = useRef(0);
-  const bgmBeatRef      = useRef(-1);
   const spawnTsRef      = useRef(0);
   const pteroSpawnTsRef = useRef(0);
   const rafRef          = useRef(0);
+  const lastTsRef       = useRef<number>(-1);
+  const accumRef        = useRef(0);
   const spriteRef       = useRef<HTMLImageElement | null>(null);
   const bugSpriteRef    = useRef<HTMLImageElement | null>(null);
 
@@ -169,14 +172,16 @@ export default function DinoGame() {
     tumbleweedsRef.current = [];
     nightPhaseRef.current = 0;
     isNightRef.current = false;
-    nextPhaseScoreRef.current = 300 + Math.random() * 200;
+    nextPhaseScoreRef.current = 1000 + Math.random() * 500;
     scoreRef.current   = 0;
     speedRef.current   = BASE_SPEED;
     animFrameRef.current = 0;
     gndOffRef.current  = 0;
-    bgmBeatRef.current = -1;
+    startDinoBgm("", "/music/High_Noon_Sprint.mp3", BASE_SPEED, BASE_SPEED);
     spawnTsRef.current = ts;
     pteroSpawnTsRef.current = ts + 4000; // first ptero after 4s
+    lastTsRef.current  = -1;
+    accumRef.current   = 0;
     statusRef.current  = "playing";
   }, []);
 
@@ -239,7 +244,7 @@ export default function DinoGame() {
   const updateEnvironment = useCallback(() => {
     if (scoreRef.current >= nextPhaseScoreRef.current) {
       isNightRef.current = !isNightRef.current;
-      nextPhaseScoreRef.current = scoreRef.current + 300 + Math.random() * 200;
+      nextPhaseScoreRef.current = scoreRef.current + 1000 + Math.random() * 500;
     }
     
     const targetNight = isNightRef.current ? 1 : 0;
@@ -426,29 +431,32 @@ export default function DinoGame() {
   }, []);
 
   const gameLoop = useCallback(function loop(ts: number) {
-    if (statusRef.current === "playing") {
-      animFrameRef.current++;
-      speedRef.current = Math.min(MAX_SPEED, speedRef.current + 0.0006);
-      gndOffRef.current += speedRef.current;
+    if (lastTsRef.current < 0) lastTsRef.current = ts;
+    const delta = Math.min(ts - lastTsRef.current, 100);
+    lastTsRef.current = ts;
+    accumRef.current += delta;
 
-      const currentBeat = Math.floor(gndOffRef.current / 80);
-      if (currentBeat > bgmBeatRef.current) {
-        bgmBeatRef.current = currentBeat;
-        playDinoBgmStep(currentBeat);
+    while (accumRef.current >= FIXED_STEP) {
+      if (statusRef.current === "playing") {
+        animFrameRef.current++;
+        speedRef.current = Math.min(MAX_SPEED, speedRef.current + 0.0006);
+        gndOffRef.current += speedRef.current;
+
+        updatePhysics();
+        updateEnvironment();
+        updateObstacles(ts);
+
+        if (checkCollisions()) {
+          window.umami?.track("game_over", { game: "dino", score: Math.floor(scoreRef.current), new_highscore: scoreRef.current > hiRef.current });
+          if (scoreRef.current > hiRef.current) { hiRef.current = Math.floor(scoreRef.current); localStorage.setItem("dino_high_score", String(hiRef.current)); }
+          statusRef.current = "gameover";
+          stopDinoBgm();
+          playDinoDie();
+        } else {
+          updateScore();
+        }
       }
-
-      updatePhysics();
-      updateEnvironment();
-      updateObstacles(ts);
-
-      if (checkCollisions()) {
-        window.umami?.track("game_over", { game: "dino", score: Math.floor(scoreRef.current), new_highscore: scoreRef.current > hiRef.current });
-        if (scoreRef.current > hiRef.current) { hiRef.current = Math.floor(scoreRef.current); localStorage.setItem("dino_high_score", String(hiRef.current)); }
-        statusRef.current = "gameover";
-        playDinoDie();
-      } else {
-        updateScore();
-      }
+      accumRef.current -= FIXED_STEP;
     }
 
     draw();
@@ -457,7 +465,10 @@ export default function DinoGame() {
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(rafRef.current);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      stopDinoBgm();
+    };
   }, [gameLoop]);
 
   useEffect(() => {
