@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import DPad from "@/components/DPad";
-import { playSnakeEat, playSnakeDie, playDinoPoint } from "@/features/desktop/utils/sounds";
+import { playSnakeEat, playSnakeDie, playDinoPoint, unlockAudio } from "@/features/desktop/utils/sounds";
 import { snakeStorage } from "./snakeStorage";
 import { snakeState } from "./snakeState";
 
@@ -249,6 +249,7 @@ export default function SnakeGame() {
   }, [draw, triggerGameOver]);
 
   const startGame = useCallback(() => {
+    unlockAudio();
     if (loopRef.current) clearInterval(loopRef.current);
     reset();
     draw();
@@ -360,18 +361,22 @@ export default function SnakeGame() {
         }
       `}</style>
       
-      <div className="flex-1 h-full flex items-center justify-center min-h-0 min-w-0">
-        <div style={{ position: "relative", height: "100%", width: "100%", maxWidth: "100%", maxHeight: "100%", aspectRatio: "1/1", display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <div className="flex-1 min-h-0 min-w-0 flex items-center justify-center overflow-hidden">
+        <div style={{
+          position: "relative",
+          ...(isMobileLandscape
+            ? { height: "100%", aspectRatio: "1/1", maxWidth: "100%" }
+            : { width: "100%", aspectRatio: "1/1" }
+          ),
+        }}>
           <canvas
             ref={canvasRef}
             width={CANVAS_W}
             height={CANVAS_H}
             style={{
-              width: isMobileLandscape ? "auto" : "100%",
-              height: isMobileLandscape ? "100%" : "100%",
-              maxWidth: "100%",
-              maxHeight: "100%",
-              aspectRatio: "1/1",
+              display: "block",
+              width: "100%",
+              height: "100%",
               imageRendering: "pixelated",
               border: "2px inset",
               touchAction: "none"

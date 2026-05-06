@@ -12,6 +12,12 @@ function getCtx(): AudioContext | null {
   }
 }
 
+/** Call during a user gesture (e.g. game start) to unlock AudioContext on iOS Safari */
+export function unlockAudio() {
+  const ac = getCtx();
+  if (ac && ac.state === "suspended") ac.resume().catch(() => {});
+}
+
 function tone(
   ac: AudioContext,
   freq: number,

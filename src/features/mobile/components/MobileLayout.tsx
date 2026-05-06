@@ -64,9 +64,12 @@ function MobileClock() {
   );
 }
 
+const GAME_IDS: SectionId[] = ["snake", "minesweeper", "dino", "solitaire"];
+
 export default function MobileLayout() {
   const [active, setActive] = useState<SectionId>("about");
   const section = SECTIONS.find((s) => s.id === active)!;
+  const isGame = GAME_IDS.includes(active);;
 
   return (
     <div
@@ -198,7 +201,7 @@ export default function MobileLayout() {
             className="window-body"
             style={{
               flex: 1,
-              overflow: "auto",
+              overflow: isGame ? "hidden" : "auto",
               padding: "4px",
               minHeight: 0,
               fontFamily: "Tahoma, sans-serif",
