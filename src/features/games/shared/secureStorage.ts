@@ -7,7 +7,8 @@ interface StoredValue {
 
 function getSecret(prefix: string): string {
   if (typeof window === "undefined") return `${prefix}_ssr`;
-  return `${prefix}_${navigator.userAgent.slice(0, 32)}${screen.width}`;
+  const w = typeof screen !== "undefined" ? Math.min(screen.width, screen.height) : 320;
+  return `${prefix}_${navigator.userAgent.slice(0, 32)}${w}`;
 }
 
 async function hmacSign(secret: string, data: string): Promise<string> {

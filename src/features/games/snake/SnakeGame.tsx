@@ -36,7 +36,7 @@ function spawnFood(snake: Point[]): Point {
 export default function SnakeGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [squareSide, setSquareSide] = useState(0);
+  const [squareSide, setSquareSide] = useState(320);
   const [score, setScore] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
   const [highScore, setHighScore] = useState(0);
@@ -61,7 +61,10 @@ export default function SnakeGame() {
     if (!el) return;
     const update = () => {
       const { width, height } = el.getBoundingClientRect();
-      setSquareSide(Math.floor(Math.min(width, height)));
+      const val = Math.floor(Math.min(width, height));
+      if (val > 50) {
+        setSquareSide(val);
+      }
     };
     update();
     const obs = new ResizeObserver(update);
@@ -438,6 +441,7 @@ export default function SnakeGame() {
           <div translate="no" className="notranslate" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
             <span style={{ fontSize: "6px", fontFamily: "'Press Start 2P', cursive", color: "#555" }}>SCORE</span>
             <span
+              key={score}
               translate="no"
               className="notranslate"
               style={{
@@ -590,11 +594,11 @@ export default function SnakeGame() {
                 <div>
                   <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>You lose!</p>
                   <p style={{ margin: "0 0 2px" }}>
-                    Score: <strong translate="no" className="notranslate">{score}</strong>
+                    Score: <strong key={score} translate="no" className="notranslate">{score}</strong>
                   </p>
                   <p style={{ margin: 0, color: highScore > 0 && score >= highScore ? "green" : undefined }}>
-                    Best: <strong translate="no" className="notranslate">{highScore}</strong>
-                    <span translate="no" className="notranslate">{highScore > 0 && score >= highScore && " 🏆"}</span>
+                    Best: <strong key={highScore} translate="no" className="notranslate">{highScore}</strong>
+                    <span key={`trophy-${highScore}`} translate="no" className="notranslate">{highScore > 0 && score >= highScore && " 🏆"}</span>
                   </p>
                 </div>
               </div>
