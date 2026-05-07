@@ -321,25 +321,37 @@ export default function SnakeGame() {
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   }
 
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!touchStartRef.current || statusRef.current !== "playing") return;
+    
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (Math.max(absDx, absDy) > 25) {
+      if (absDx > absDy) {
+        if (dx > 0 && dirRef.current !== "LEFT") { nextDirRef.current = "RIGHT"; snakeState.countInput(); }
+        else if (dx < 0 && dirRef.current !== "RIGHT") { nextDirRef.current = "LEFT"; snakeState.countInput(); }
+      } else {
+        if (dy > 0 && dirRef.current !== "UP") { nextDirRef.current = "DOWN"; snakeState.countInput(); }
+        else if (dy < 0 && dirRef.current !== "DOWN") { nextDirRef.current = "UP"; snakeState.countInput(); }
+      }
+      // Reset touch start so we don't fire continuously for one swipe
+      touchStartRef.current = null;
+    }
+  }
+
   function handleTouchEnd(e: React.TouchEvent) {
     const start = touchStartRef.current;
     if (!start) return;
     touchStartRef.current = null;
     const dx = e.changedTouches[0].clientX - start.x;
     const dy = e.changedTouches[0].clientY - start.y;
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-
-    if (Math.max(absDx, absDy) < 20) {
+    
+    // If very small movement, consider it a tap to start
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 10) {
       if (statusRef.current !== "playing") startGame();
-      return;
-    }
-    if (absDx > absDy) {
-      if (dx > 0 && dirRef.current !== "LEFT") { nextDirRef.current = "RIGHT"; snakeState.countInput(); }
-      else if (dx < 0 && dirRef.current !== "RIGHT") { nextDirRef.current = "LEFT"; snakeState.countInput(); }
-    } else {
-      if (dy > 0 && dirRef.current !== "UP") { nextDirRef.current = "DOWN"; snakeState.countInput(); }
-      else if (dy < 0 && dirRef.current !== "DOWN") { nextDirRef.current = "UP"; snakeState.countInput(); }
     }
   }
 
@@ -358,7 +370,7 @@ export default function SnakeGame() {
 
 
   return (
-    <div className={`flex items-center justify-center w-full flex-1 min-h-0 overflow-hidden ${isMobileLandscape ? "flex-row p-1" : "flex-col p-2"}`}>
+    <div className={`flex items-center justify-center w-full h-full flex-1 min-h-0 overflow-hidden ${isMobileLandscape ? "flex-row p-1" : "flex-col p-2"}`}>
       <style>{`
         @keyframes snakeFloatUp {
           0% { transform: translateY(0) scale(1); opacity: 1; }
@@ -385,8 +397,10 @@ export default function SnakeGame() {
               height: "100%",
               imageRendering: "pixelated",
               border: "2px inset",
+              touchAction: "none",
             }}
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           />
           {popups.map((p) => (
