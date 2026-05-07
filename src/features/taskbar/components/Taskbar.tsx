@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useDesktopStore } from "@/features/desktop/store/desktop-store";
 import { DESKTOP_ICONS, GAME_ICONS } from "@/features/desktop/data/desktop-items";
+import { translations } from "@/features/i18n/dictionaries";
 
 const ALL_ICONS = [...DESKTOP_ICONS, ...GAME_ICONS];
 import Clock from "./Clock";
@@ -159,7 +160,8 @@ function formatLastVisit(iso: string): string {
 }
 
 export default function Taskbar() {
-  const { windows, focusedWindowId, openWindow, toggleWindowFromTaskbar, muted, toggleMute } = useDesktopStore();
+  const { windows, focusedWindowId, openWindow, toggleWindowFromTaskbar, muted, toggleMute, language, setLanguage } = useDesktopStore();
+  const t = translations[language];
   const [startOpen, setStartOpen] = useState(false);
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
   const [showShutdown, setShowShutdown] = useState(false);
@@ -207,34 +209,34 @@ export default function Taskbar() {
   const startMenuItems: StartMenuItem[] = [
     {
       kind: "submenu",
-      label: "Programs",
+      label: t.programs || "Programs",
       items: programsSubmenu,
     },
     { kind: "separator" },
     {
       kind: "submenu",
-      label: "Documents",
-      items: [{ kind: "action", label: "(Empty)", disabled: true, action: () => {} }],
+      label: t.documents || "Documents",
+      items: [{ kind: "action", label: t.empty || "(Empty)", disabled: true, action: () => {} }],
     },
     {
       kind: "submenu",
-      label: "Settings",
+      label: t.settings || "Settings",
       items: [
-        { kind: "action", label: "Control Panel", disabled: true, action: () => {} },
-        { kind: "action", label: "Taskbar & Start Menu...", disabled: true, action: () => {} },
+        { kind: "action", label: t.controlPanel || "Control Panel", disabled: true, action: () => {} },
+        { kind: "action", label: t.taskbarAndStartMenu || "Taskbar & Start Menu...", disabled: true, action: () => {} },
       ],
     },
     {
       kind: "submenu",
-      label: "Find",
+      label: t.find || "Find",
       items: [
-        { kind: "action", label: "Files or Folders...", disabled: true, action: () => {} },
-        { kind: "action", label: "On the Internet...", disabled: true, action: () => {} },
+        { kind: "action", label: t.filesOrFolders || "Files or Folders...", disabled: true, action: () => {} },
+        { kind: "action", label: t.onTheInternet || "On the Internet...", disabled: true, action: () => {} },
       ],
     },
     {
       kind: "action",
-      label: "Help",
+      label: t.help || "Help",
       action: () => {
         const readme = DESKTOP_ICONS.find((i) => i.id === "readme");
         if (readme) openWindow(readme);
@@ -242,13 +244,13 @@ export default function Taskbar() {
     },
     {
       kind: "action",
-      label: "Run...",
+      label: t.run || "Run...",
       action: () => setShowRun(true),
     },
     { kind: "separator" },
     {
       kind: "action",
-      label: "Shut Down...",
+      label: t.shutDown || "Shut Down...",
       action: () => { window.umami?.track("open_shutdown"); setShowShutdown(true); },
     },
   ];
@@ -377,7 +379,7 @@ export default function Taskbar() {
               gap: "4px",
             }}
           >
-            <span style={{ fontSize: "14px" }}>⊞</span> Start
+            <span style={{ fontSize: "14px" }}>⊞</span> {t.start || "Start"}
           </button>
 
           {/* Divider */}
@@ -438,6 +440,9 @@ export default function Taskbar() {
               {muted ? "🔇" : "🔊"}
             </TrayIcon>
             <TrayIcon label="Display Properties" onClick={() => { window.umami?.track("open_properties", { source: "tray" }); setShowDisplayProps(true); }}>🖥️</TrayIcon>
+            <TrayIcon label={t.languageLabel || "Language"} onClick={() => setLanguage(language === 'en' ? 'th' : 'en')}>
+              <span style={{ fontSize: "10px", fontWeight: "bold" }}>{language.toUpperCase()}</span>
+            </TrayIcon>
             <div style={{
               width: "1px",
               height: "16px",

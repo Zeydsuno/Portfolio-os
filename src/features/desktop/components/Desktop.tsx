@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useDesktopStore } from "../store/desktop-store";
 import { DESKTOP_ICONS } from "../data/desktop-items";
+import { translations } from "@/features/i18n/dictionaries";
 
 interface Marquee {
   startX: number;
@@ -85,7 +86,8 @@ const KONAMI = [
 ];
 
 export default function Desktop() {
-  const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaper, fontScale } = useDesktopStore();
+  const { windows, selectIcon, selectIcons, iconPositions, arrangeIcons, wallpaper, fontScale, language } = useDesktopStore();
+  const t = translations[language];
   const [booted, setBooted] = useState(false);
   const [showScreensaver, setShowScreensaver] = useState(false);
   const [showBSOD, setShowBSOD] = useState(false);
@@ -303,12 +305,12 @@ export default function Desktop() {
           >
             <div className="window-body" style={{ padding: 0, margin: 0 }}>
               {([
-                { label: "Arrange Icons", action: () => arrangeIcons(desktopHeight) },
-                { label: "Refresh", action: () => { window.umami?.track("desktop_refresh"); window.location.reload(); } },
+                { label: t.arrangeIcons || "Arrange Icons", action: () => arrangeIcons(desktopHeight) },
+                { label: t.refresh || "Refresh", action: () => { window.umami?.track("desktop_refresh"); window.location.reload(); } },
                 null,
-                { label: "New", hasSubmenu: true },
+                { label: t.newItem || "New", hasSubmenu: true },
                 null,
-                { label: "Properties", action: () => { window.umami?.track("open_properties", { source: "desktop" }); setShowDisplayProps(true); } },
+                { label: t.properties || "Properties", action: () => { window.umami?.track("open_properties", { source: "desktop" }); setShowDisplayProps(true); } },
               ] as (MenuItem | null)[]).map((item, i) =>
                 item === null ? (
                   <div
@@ -372,7 +374,7 @@ export default function Desktop() {
             <div className="window-body" style={{ padding: 0, margin: 0 }}>
               {[
                 {
-                  label: "Open",
+                  label: t.open || "Open",
                   action: () => {
                     const { openWindow } = useDesktopStore.getState();
                     playWindowOpen();
@@ -381,21 +383,21 @@ export default function Desktop() {
                 },
                 null,
                 {
-                  label: "Rename",
+                  label: t.rename || "Rename",
                   action: () => {
                     playError();
                     setErrorDialog("Cannot rename system file.\n\nAccess is denied.");
                   },
                 },
                 {
-                  label: "Delete",
+                  label: t.delete || "Delete",
                   action: () => {
                     playError();
                     setErrorDialog(`Cannot delete '${iconContextMenu?.icon.label}'.\n\nAccess is denied.`);
                   },
                 },
                 null,
-                { label: "Properties", disabled: true },
+                { label: t.properties || "Properties", disabled: true },
               ].map((item, i) =>
                 item === null ? (
                   <div

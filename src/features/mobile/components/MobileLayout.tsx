@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDesktopStore } from "@/features/desktop/store/desktop-store";
+import { translations } from "@/features/i18n/dictionaries";
 import ReadmeContent from "@/features/portfolio/components/ReadmeContent";
 import ProjectsContent from "@/features/portfolio/components/ProjectsContent";
 import MailContent from "@/features/portfolio/components/MailContent";
@@ -67,6 +69,8 @@ function MobileClock() {
 const GAME_IDS: SectionId[] = ["snake", "minesweeper", "dino", "solitaire"];
 
 export default function MobileLayout() {
+  const { language, setLanguage } = useDesktopStore();
+  const t = translations[language as keyof typeof translations];
   const [active, setActive] = useState<SectionId>("about");
   const section = SECTIONS.find((s) => s.id === active)!;
   const isGame = GAME_IDS.includes(active);;
@@ -97,7 +101,27 @@ export default function MobileLayout() {
         }}
       >
         <span>🖥️</span>
-        <span style={{ color: "#000" }}>Best viewed on desktop for full experience</span>
+        <span style={{ color: "#000" }}>{t.mobileWarning || "Best viewed on desktop for full experience"}</span>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => setLanguage(language === 'en' ? 'th' : 'en')}
+          style={{
+            ...FONT,
+            fontSize: "8px",
+            padding: "2px 4px",
+            background: "#c0c0c0",
+            border: "1px solid",
+            borderColor: "#fff #808080 #808080 #fff",
+            cursor: "pointer",
+            fontWeight: "bold",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#000",
+          }}
+        >
+          {language.toUpperCase()}
+        </button>
       </div>
 
       {/* Top bar — Win98 title bar style */}
@@ -240,7 +264,7 @@ export default function MobileLayout() {
             flexShrink: 0,
           }}
         >
-          <span>⊞</span> Start
+          <span>⊞</span> {t.start || "Start"}
         </button>
 
         <div

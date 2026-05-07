@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import { useDesktopStore } from "@/features/desktop/store/desktop-store";
+import { translations } from "@/features/i18n/dictionaries";
 
 interface Screenshot {
   src: string;
@@ -13,7 +15,6 @@ interface Project {
   id: string;
   name: string;
   icon: string;
-  description: string;
   tech: string[];
   status: "Live" | "Deployed" | "MVP" | "In Progress";
   link?: string;
@@ -25,7 +26,6 @@ const PROJECTS: Project[] = [
     id: "euroscan",
     name: "EuroScan Warranty ERP",
     icon: "🏭",
-    description: "QR-based warranty management ERP with PDF/QR generation, Google Calendar integration, deployed as Electron desktop app.",
     tech: ["Vue.js", "Node.js", "MySQL", "Electron"],
     status: "Deployed",
     screenshots: [
@@ -39,7 +39,6 @@ const PROJECTS: Project[] = [
     id: "family",
     name: "Family Business ERP",
     icon: "🏠",
-    description: "Production ERP for family food business — inventory, BOM recipes, finance (business vs personal wallets), iPad Kiosk, and mobile app.",
     tech: ["Next.js", "React Native", "Supabase", "TypeScript", "Turborepo"],
     status: "Deployed",
     screenshots: [
@@ -59,7 +58,6 @@ const PROJECTS: Project[] = [
     id: "portfolio",
     name: "Portfolio OS",
     icon: "🖥️",
-    description: "Windows 98-style interactive portfolio built as a fake OS with draggable windows, games, and apps.",
     tech: ["Next.js", "TypeScript", "98.css", "Zustand"],
     status: "Live",
   },
@@ -67,7 +65,6 @@ const PROJECTS: Project[] = [
     id: "ai-job",
     name: "AI Job Matching",
     icon: "🤖",
-    description: "AI-powered job matching for the Thailand market with NLP skill extraction and embeddings-based ranking.",
     tech: ["Python", "FastAPI", "E5/JobBERT", "Google Sheets"],
     status: "In Progress",
   },
@@ -75,7 +72,6 @@ const PROJECTS: Project[] = [
     id: "stock",
     name: "Stock News Dashboard",
     icon: "📈",
-    description: "Real-time stock news analysis platform with AI impact scoring, delivered via LINE Mini App.",
     tech: ["Flask", "LIFF", "GLM-4.6", "NewsAPI", "Cloudflare Tunnel"],
     status: "MVP",
     link: "https://github.com/Zeydsuno/STOCKNEWS",
@@ -83,9 +79,9 @@ const PROJECTS: Project[] = [
 ];
 
 const STATUS_STYLE: Record<Project["status"], React.CSSProperties> = {
-  Live:        { background: "#008000", color: "#fff" },
-  Deployed:    { background: "#000080", color: "#fff" },
-  MVP:         { background: "#808000", color: "#fff" },
+  Live:          { background: "#008000", color: "#fff" },
+  Deployed:      { background: "#000080", color: "#fff" },
+  MVP:           { background: "#808000", color: "#fff" },
   "In Progress": { background: "#808080", color: "#fff" },
 };
 
@@ -98,6 +94,9 @@ export default function ProjectsContent() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const project = PROJECTS.find((p) => p.id === selected) ?? PROJECTS[0];
   const listRef = useRef<HTMLDivElement>(null);
+
+  const { language } = useDesktopStore();
+  const t = translations[language].projects;
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth < 600);
@@ -156,7 +155,7 @@ export default function ProjectsContent() {
           flexShrink: 0,
         }}
       >
-        <span style={{ color: "#808080" }}>Projects ({PROJECTS.length})</span>
+        <span style={{ color: "#808080" }}>{t.toolbarPrefix} ({PROJECTS.length})</span>
       </div>
 
       {/* Main split */}
@@ -247,26 +246,26 @@ export default function ProjectsContent() {
           {/* Description */}
           <div>
             <div style={{ fontSize: "7px", color: "#808080", marginBottom: "4px" }}>
-              DESCRIPTION
+              {t.description}
             </div>
             <div style={{ fontSize: "8px", lineHeight: 1.8 }}>
-              {project.description}
+              {t.descriptions[project.id]}
             </div>
           </div>
 
           {/* Tech */}
           <div>
             <div style={{ fontSize: "7px", color: "#808080", marginBottom: "6px" }}>
-              TECH STACK
+              {t.techStack}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-              {project.tech.map((t) => (
+              {project.tech.map((tech) => (
                 <span
-                  key={t}
+                  key={tech}
                   className="status-bar-field"
                   style={{ fontSize: "7px", padding: "2px 6px" }}
                 >
-                  {t}
+                  {tech}
                 </span>
               ))}
             </div>
@@ -275,7 +274,7 @@ export default function ProjectsContent() {
           {/* Link */}
           <div>
             <div style={{ fontSize: "7px", color: "#808080", marginBottom: "4px" }}>
-              REPOSITORY
+              {t.repository}
             </div>
             {project.link ? (
               <a
@@ -285,11 +284,11 @@ export default function ProjectsContent() {
                 onClick={() => window.umami?.track("click_github", { project: project.id })}
                 style={{ fontSize: "8px", color: "#000080" }}
               >
-                View on GitHub ↗
+                {t.viewOnGithub}
               </a>
             ) : (
               <span style={{ fontSize: "8px", color: "#808080" }}>
-                🔒 Private / Internal
+                {t.privateInternal}
               </span>
             )}
           </div>
@@ -301,7 +300,7 @@ export default function ProjectsContent() {
             return (
               <div>
                 <div style={{ fontSize: "7px", color: "#808080", marginBottom: "6px" }}>
-                  SCREENSHOTS ({activeShot + 1}/{shots.length})
+                  {t.screenshotsLabel} ({activeShot + 1}/{shots.length})
                 </div>
 
                 {/* Main preview */}
@@ -326,7 +325,6 @@ export default function ProjectsContent() {
                     sizes="(max-width: 900px) 80vw, 600px"
                     quality={95}
                   />
-                  {/* Prev / Next arrows */}
                   {activeShot > 0 && (
                     <button
                       onClick={(e) => { e.stopPropagation(); window.umami?.track("screenshot_prev", { project: project.id }); setActiveShot((i) => i - 1); }}
@@ -401,7 +399,7 @@ export default function ProjectsContent() {
         style={{ display: "flex", gap: "4px", padding: "2px 4px", flexShrink: 0 }}
       >
         <div className="status-bar-field" style={{ flex: 1 }}>
-          {PROJECTS.indexOf(project) + 1} of {PROJECTS.length} projects
+          {PROJECTS.indexOf(project) + 1} {t.statusOf} {PROJECTS.length} {t.statusProjects}
         </div>
         <div className="status-bar-field">{project.status}</div>
       </div>
@@ -459,7 +457,7 @@ export default function ProjectsContent() {
                   style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
                   onClick={() => { window.umami?.track("lightbox_prev", { project: project.id }); setActiveShot((i) => Math.max(i - 1, 0)); }}
                   disabled={activeShot === 0}
-                >⬅︎ Prev</button>
+                >{t.prev}</button>
                 <span style={{ fontSize: "8px", color: "#808080" }}>
                   {project.screenshots[activeShot].caption}
                 </span>
@@ -467,14 +465,14 @@ export default function ProjectsContent() {
                   style={{ fontSize: "8px", padding: "2px 10px", ...FONT }}
                   onClick={() => { window.umami?.track("lightbox_next", { project: project.id }); setActiveShot((i) => Math.min(i + 1, project.screenshots!.length - 1)); }}
                   disabled={activeShot === project.screenshots.length - 1}
-                >Next ➡︎</button>
+                >{t.next}</button>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", paddingTop: "2px" }}>
                 <button
                   style={{ ...FONT, fontSize: "10px", padding: "4px 24px", cursor: "pointer" }}
                   onClick={() => setLightboxOpen(false)}
-                >✕ Close</button>
-                <span style={{ fontSize: "7px", color: "#808080" }}>or tap outside to close</span>
+                >{t.close}</button>
+                <span style={{ fontSize: "7px", color: "#808080" }}>{t.tapToClose}</span>
               </div>
             </div>
           </div>

@@ -1,81 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useDesktopStore } from "@/features/desktop/store/desktop-store";
+import { translations } from "@/features/i18n/dictionaries";
 
 type Tab = "experience" | "education" | "skills" | "certificates";
 
-interface Experience {
-  title: string;
-  company: string;
-  location: string;
-  period: string;
-  bullets: string[];
-}
-
-interface SkillGroup {
-  category: string;
-  items: string[];
-}
-
-const EXPERIENCES: Experience[] = [
-  {
-    title: "Full-Stack Developer (Freelance)",
-    company: "EuroScan Co., Ltd",
-    location: "Bangkok, Thailand",
-    period: "Jun – Dec 2025",
-    bullets: [
-      "Built QR-based Warranty Management ERP using Vue.js, Node.js, MySQL",
-      "Deployed as Electron desktop app — cut manual input by 50%",
-      "PDF/QR generation and Google Calendar integration",
-    ],
-  },
-  {
-    title: "AI Engineer (Intern)",
-    company: "iBotNoi Company Limited",
-    location: "Bangkok, Thailand",
-    period: "Jan – Apr 2025",
-    bullets: [
-      "Developed AI video/audio summarization platform using PyTorch, LangChain, FastAPI",
-      "Built backend APIs and Vue.js dashboards with Supabase integration",
-      "Enhanced UX with real-time previews, drag-drop uploads, and ASR benchmarking",
-    ],
-  },
-  {
-    title: "IT Support & LINE Developer",
-    company: "EuroScan Co., Ltd",
-    location: "Bangkok, Thailand",
-    period: "Jun – Jul 2023",
-    bullets: [
-      "Built LINE Chatbot automating medical equipment data retrieval",
-      "Reduced manual data lookup by 80%, response times by 40%",
-    ],
-  },
+const BASE_EXPERIENCES = [
+  { company: "EuroScan Co., Ltd",          location: "Bangkok, Thailand", period: "Jun – Dec 2025" },
+  { company: "iBotNoi Company Limited",     location: "Bangkok, Thailand", period: "Jan – Apr 2025" },
+  { company: "EuroScan Co., Ltd",           location: "Bangkok, Thailand", period: "Jun – Jul 2023" },
 ];
-
-const SKILLS: SkillGroup[] = [
-  { category: "Languages", items: ["Python", "TypeScript", "JavaScript", "SQL"] },
-  { category: "Frameworks", items: ["FastAPI", "Flask", "Vue.js", "Express.js", "PyTorch", "LangChain"] },
-  { category: "Tools", items: ["Git", "Docker", "Electron", "GitLab CI", "Jest", "LINE API", "Cloudflare Tunnel"] },
-  { category: "Platforms", items: ["MySQL", "MongoDB", "Supabase", "Google Cloud"] },
-  { category: "Soft Skills", items: ["Problem-Solving", "Communication", "Time Management", "Adaptability", "Team Collaboration"] },
-];
-
-const CERTIFICATES: string[] = [
-  "Artificial Intelligence Summer Program — Taiwan",
-  "Foundations of Cybersecurity — Google",
-  "Google AI Essentials — Google",
-  "Prompt Engineering for ChatGPT — Vanderbilt University",
-];
-
-const TAB_LABELS: Record<Tab, string> = {
-  experience: "Experience",
-  education: "Education",
-  skills: "Skills",
-  certificates: "Certificates",
-};
 
 export default function CVContent() {
   const [activeTab, setActiveTab] = useState<Tab>("experience");
+  const { language } = useDesktopStore();
+  const t = translations[language];
+  const cv = t.cv;
+
+  const TAB_LABELS: Record<Tab, string> = {
+    experience:   cv.tabs.experience,
+    education:    cv.tabs.education,
+    skills:       cv.tabs.skills,
+    certificates: cv.tabs.certificates,
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -92,7 +40,7 @@ export default function CVContent() {
         ))}
         <div style={{ flex: 1 }} />
         <a href="/file/Attidmese_Bunsua_CV.docx" download onClick={() => window.umami?.track("download_cv")} style={{ textDecoration: "none" }}>
-          <button style={{ fontSize: "9px" }}>Save As...</button>
+          <button style={{ fontSize: "9px" }}>{cv.saveAs}</button>
         </a>
       </div>
 
@@ -103,18 +51,21 @@ export default function CVContent() {
 
         {activeTab === "experience" && (
           <div>
-            {EXPERIENCES.map((exp) => (
-              <div key={exp.title} style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
-                <div style={{ width: "2px", backgroundColor: "#000080", flexShrink: 0, marginTop: "3px" }} />
-                <div>
-                  <p><strong>{exp.title}</strong> — {exp.company}</p>
-                  <p style={{ color: "#555" }}>{exp.location} | {exp.period}</p>
-                  <ul style={{ paddingLeft: "16px", marginTop: "4px" }}>
-                    {exp.bullets.map((b) => <li key={b}>{b}</li>)}
-                  </ul>
+            {cv.experiences.map((exp, i) => {
+              const base = BASE_EXPERIENCES[i];
+              return (
+                <div key={exp.title} style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
+                  <div style={{ width: "2px", backgroundColor: "#000080", flexShrink: 0, marginTop: "3px" }} />
+                  <div>
+                    <p><strong>{exp.title}</strong> — {base.company}</p>
+                    <p style={{ color: "#555" }}>{base.location} | {base.period}</p>
+                    <ul style={{ paddingLeft: "16px", marginTop: "4px" }}>
+                      {exp.bullets.map((b) => <li key={b}>{b}</li>)}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -123,23 +74,24 @@ export default function CVContent() {
             <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
               <div style={{ width: "2px", backgroundColor: "#000080", flexShrink: 0, marginTop: "3px" }} />
               <div>
-                <p><strong>Bachelor of Software Engineering</strong> — Mae Fah Luang University</p>
+                <p><strong>{cv.education.degree}</strong> — Mae Fah Luang University</p>
                 <p style={{ color: "#555" }}>Bangkok, Thailand | Jun 2021 – Aug 2025</p>
-                <p style={{ marginTop: "4px" }}>GPA: <strong>3.29</strong></p>
+                <p style={{ marginTop: "4px" }}>{cv.education.gpaLabel} <strong>3.29</strong></p>
               </div>
             </div>
             <hr style={{ margin: "8px 0" }} />
-            <p style={{ marginBottom: "8px" }}><strong>LANGUAGES</strong></p>
+            <p style={{ marginBottom: "8px" }}><strong>{cv.education.langSection}</strong></p>
             <ul style={{ paddingLeft: "16px" }}>
-              <li>English — Intermediate (CEFR B1)</li>
-              <li>Thai — Native</li>
+              {cv.education.langList.map((lang) => (
+                <li key={lang}>{lang}</li>
+              ))}
             </ul>
           </div>
         )}
 
         {activeTab === "skills" && (
           <div>
-            {SKILLS.map((group) => (
+            {cv.skills.map((group) => (
               <div key={group.category} style={{ marginBottom: "12px" }}>
                 <p style={{ marginBottom: "4px" }}><strong>{group.category}</strong></p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
@@ -160,7 +112,7 @@ export default function CVContent() {
 
         {activeTab === "certificates" && (
           <ul style={{ paddingLeft: "16px" }}>
-            {CERTIFICATES.map((cert) => (
+            {cv.certificates.map((cert) => (
               <li key={cert} style={{ marginBottom: "8px" }}>{cert}</li>
             ))}
           </ul>

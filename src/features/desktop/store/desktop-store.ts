@@ -10,6 +10,7 @@ import type {
   WallpaperEntry,
 } from "@/types";
 import { DESKTOP_ICONS, ICON_POSITIONS } from "../data/desktop-items";
+import type { Language } from "@/features/i18n/dictionaries";
 
 interface DesktopState {
   windows: WindowInstance[];
@@ -41,6 +42,8 @@ interface DesktopState {
   emptyRecycleBin: () => void;
   fontScale: number;
   setFontScale: (scale: number) => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
 }
 
 export const useDesktopStore = create<DesktopState>()(persist((set, get) => ({
@@ -59,6 +62,7 @@ export const useDesktopStore = create<DesktopState>()(persist((set, get) => ({
   },
   recycleBinFull: false,
   fontScale: 1,
+  language: 'en',
 
   openWindow: (icon) => {
     const { windows, nextZIndex, focusWindow } = get();
@@ -281,6 +285,7 @@ export const useDesktopStore = create<DesktopState>()(persist((set, get) => ({
   setWallpaper: (wallpaper) => set({ wallpaper }),
   emptyRecycleBin: () => set({ recycleBinFull: false }),
   setFontScale: (scale) => set({ fontScale: scale }),
+  setLanguage: (lang) => set({ language: lang }),
 
   arrangeIcons: (desktopHeight) => {
     const GRID_W = 80;
@@ -301,5 +306,6 @@ export const useDesktopStore = create<DesktopState>()(persist((set, get) => ({
     wallpaper: state.wallpaper,
     fontScale: state.fontScale,
     iconPositions: state.iconPositions,
+    language: state.language,
   }),
 }));
