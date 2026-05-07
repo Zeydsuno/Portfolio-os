@@ -3,14 +3,15 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { solitaireStorage } from "./solitaireStorage";
+import { SolitaireHelpModal } from "./SolitaireHelpModal";
 
 const FONT: React.CSSProperties = { fontFamily: "'Press Start 2P', cursive" };
 
-type Suit = "hearts" | "diamonds" | "clubs" | "spades";
-const SUITS: Suit[] = ["hearts", "diamonds", "clubs", "spades"];
-const SUIT_SYM: Record<Suit, string> = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
-const RED: Set<Suit> = new Set(["hearts", "diamonds"]);
-const VAL_LABEL = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+export type Suit = "hearts" | "diamonds" | "clubs" | "spades";
+export const SUITS: Suit[] = ["hearts", "diamonds", "clubs", "spades"];
+export const SUIT_SYM: Record<Suit, string> = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
+export const RED: Set<Suit> = new Set(["hearts", "diamonds"]);
+export const VAL_LABEL = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
 const CARD_W = 62;
 const CARD_H = 86;
@@ -139,7 +140,7 @@ function placeOnTableauCol(state: GameState, cards: Card[], colIdx: number): Gam
   return { ...state, tableau: newT, moves: state.moves + 1 };
 }
 
-function MiniCard({ label, suit }: { label: string; suit: Suit }) {
+export function MiniCard({ label, suit }: { label: string; suit: Suit }) {
   const isRed = RED.has(suit);
   return (
     <div style={{
@@ -172,9 +173,25 @@ interface CardProps {
 
 function CardView({ card, dragging, onPointerDown, onDoubleClick, style }: CardProps) {
   const color = RED.has(card.suit) ? "#cc0000" : "#000";
+  const lastTapRef = useRef<number>(0);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (onDoubleClick) {
+      const now = Date.now();
+      if (now - lastTapRef.current < 450) {
+        onDoubleClick(e as unknown as React.MouseEvent);
+        lastTapRef.current = 0;
+        return; // Skip startDrag if it's a double tap
+      }
+      lastTapRef.current = now;
+    }
+
+    if (onPointerDown) onPointerDown(e);
+  };
+
   return (
     <div
-      onPointerDown={onPointerDown}
+      onPointerDown={handlePointerDown}
       onDoubleClick={onDoubleClick}
       style={{
         width: CARD_W,
@@ -322,9 +339,9 @@ export default function SolitaireGame() {
       setDrag(null);
       if (!drag) return;
 
-      // Use ghost card center for hit detection so the card lands where it visually appears
-      const cx = e.clientX - drag.offsetX + CARD_W / 2;
-      const cy = e.clientY - drag.offsetY + CARD_H / 2;
+      // Use ghost card center for hit detection
+      const cx = e.clientX - drag.offsetX + (CARD_W * scale) / 2;
+      const cy = e.clientY - drag.offsetY + (CARD_H * scale) / 2;
 
       const hit = (el: HTMLElement | null): boolean => {
         if (!el) return false;
@@ -335,6 +352,7 @@ export default function SolitaireGame() {
       // Try foundations
       for (let i = 0; i < 4; i++) {
         if (hit(foundRefs.current[i])) {
+          if (drag.from.zone === "foundation" && drag.from.idx === i) return;
           const base = removeFromSource(game, drag.from, drag.cards.length);
           const result = placeOnFoundation(base, drag.cards, i);
           if (result) { legMovesRef.current++; setGame(result); return; }
@@ -345,6 +363,7 @@ export default function SolitaireGame() {
       // Try tableau columns
       for (let i = 0; i < 7; i++) {
         if (hit(tabRefs.current[i])) {
+          if (drag.from.zone === "tableau" && drag.from.col === i) return;
           const base = removeFromSource(game, drag.from, drag.cards.length);
           const result = placeOnTableauCol(base, drag.cards, i);
           if (result) { legMovesRef.current++; setGame(result); return; }
@@ -360,7 +379,7 @@ export default function SolitaireGame() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [drag, game]);
+  }, [drag, game, scale]);
 
   // ── Game actions ─────────────────────────────────────────────────────────
 
@@ -378,6 +397,7 @@ export default function SolitaireGame() {
   }, []);
 
   const autoFoundation = useCallback((from: From, card: Card) => {
+    setDrag(null);
     setGame(g => {
       for (let i = 0; i < 4; i++) {
         if (canPlaceFoundation(card, g.foundations[i])) {
@@ -456,6 +476,8 @@ export default function SolitaireGame() {
           top: drag.ghostY - drag.offsetY,
           zIndex: 9999,
           pointerEvents: "none",
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
         }}>
           {drag.cards.map((card, i) => (
             <div key={i} style={{ position: i === 0 ? "relative" : "absolute", top: i === 0 ? 0 : i * FACE_UP_OFFSET, left: 0, zIndex: i }}>
@@ -594,57 +616,7 @@ export default function SolitaireGame() {
       </div>{/* end scaled content wrapper */}
 
       {/* Help overlay */}
-      {showHelp && (
-        <div
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300 }}
-          onClick={() => setShowHelp(false)}
-        >
-          <div className="window" style={{ minWidth: 260, maxWidth: 310 }} onClick={e => e.stopPropagation()}>
-            <div className="title-bar">
-              <div className="title-bar-text">Solitaire — How to Play</div>
-              <div className="title-bar-controls">
-                <button aria-label="Close" onClick={() => setShowHelp(false)} />
-              </div>
-            </div>
-            <div className="window-body" style={{ padding: "12px 16px", fontSize: 11, lineHeight: 1.8 }}>
-              <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Tableau — alternating colors, descending</p>
-              {/* Visual: valid vs invalid stack */}
-              <div style={{ display: "flex", gap: 16, margin: "0 0 10px", alignItems: "center" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-                  <MiniCard label="Q" suit="spades" />
-                  <MiniCard label="J" suit="hearts" />
-                  <span style={{ fontSize: 9, color: "#006600" }}>✓ valid</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-                  <MiniCard label="Q" suit="spades" />
-                  <MiniCard label="J" suit="clubs" />
-                  <span style={{ fontSize: 9, color: "#cc0000" }}>✗ same color</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-                  <MiniCard label="Q" suit="spades" />
-                  <MiniCard label="10" suit="hearts" />
-                  <span style={{ fontSize: 9, color: "#cc0000" }}>✗ skip rank</span>
-                </div>
-              </div>
-              <p style={{ margin: "0 0 4px" }}>• Empty column → <strong>King only</strong></p>
-              <p style={{ margin: "0 0 10px" }}>• Drag an entire sequence at once</p>
-
-              <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>Foundation (top-right) — build A→K per suit</p>
-              <div style={{ display: "flex", gap: 4, margin: "0 0 10px", alignItems: "center" }}>
-                {(["A","2","3","…","K"] as const).map((v, i) => (
-                  <span key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                    <MiniCard label={v} suit="hearts" />
-                  </span>
-                ))}
-              </div>
-              <p style={{ margin: "0 0 10px" }}>• <strong>Double-click</strong> any card to auto-send to foundation</p>
-
-              <p style={{ margin: "0 0 4px", fontWeight: "bold" }}>Stock (top-left)</p>
-              <p style={{ margin: 0 }}>• Click to draw a card &nbsp;•&nbsp; Click <strong>↺</strong> to reset pile</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {showHelp && <SolitaireHelpModal onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

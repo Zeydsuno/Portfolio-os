@@ -366,7 +366,7 @@ export default function SnakeGame() {
         }
       `}</style>
       
-      <div className="flex-1 min-h-0 min-w-0 w-full" style={{ position: "relative" }}>
+      <div className="flex-1 min-h-0 min-w-0 w-full h-full" style={{ position: "relative" }}>
         <div style={{
           position: "absolute",
           inset: 0,
@@ -394,8 +394,8 @@ export default function SnakeGame() {
               key={p.id}
               style={{
                 position: "absolute",
-                left: `${(p.x / GRID_W) * 100}%`,
-                top: `calc(${(p.y / GRID_H) * 100}% - 10px)`,
+                left: `clamp(10px, ${(p.x / GRID_W) * 100}%, calc(100% - 40px))`,
+                top: `clamp(30px, calc(${(p.y / GRID_H) * 100}% - 10px), calc(100% - 20px))`,
                 color: p.color,
                 fontWeight: "bold",
                 fontSize: "14px",
